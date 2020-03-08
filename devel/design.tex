@@ -1,0 +1,243 @@
+
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{indentfirst}
+\usepackage{natbib}
+\usepackage{url}
+
+\newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
+\newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
+
+\newtheorem{theorem}{Theorem}
+
+\begin{document}
+
+\title{An R Package for Multigene Descent Probabilities}
+
+\author{Charles J. Geyer}
+
+\maketitle
+
+Here we design an R package that incorporates some of the functionality
+of a very old (and defunct) S package for statistical genetics described
+by \citet{geyer}.  In particular, our new package will do multigene
+descent probabilities as described originally by \citet{thompson} and
+as implemented by \citet{geyer}.
+
+We work relative to a defined pedigree in which every individual has either
+two parents or none specified.  Those with none specified are called
+\emph{founders}.  A pedigree may be specified by a \emph{triplets matrix}
+having three columns and each row gives the names of a non-founder individual,
+its father, and its mother, in that order.  We check that no individual is
+its own ancestor.  Optionally, we check that sexes are consistent
+(no individual is both father and mother).  This check is optional
+so that we can deal with hermaphroditic organisms.
+
+Any ancestors of individuals not in the pedigree --- including parents
+of founders --- are assumed to not be individuals in the pedigree.
+That is, we are assuming that all unknown individuals are not any known
+individuals.
+
+\citet{thompson} defines \emph{multigene descent probabilities}
+$g_S(B_1, \ldots, B_n)$ to be the probability that genes
+at one autosomal locus randomly chosen from
+each of the individuals $B_1$, $\ldots,$ $B_n$
+are all descended from genes (not necessarily the same gene)
+in some set $S$ of genes in individuals in the pedigree.
+The individuals $B_1$, $\ldots,$ $B_n$ need not be distinct.
+The set $S$ can be specified by giving for each individual in the pedigree
+an integer 0, 1, or 2 that says how many of its genes (at the autosomal locus
+in question) are in the set $S$.
+
+Since the order of $B_1$, $\ldots,$ $B_n$ does not matter to the definition,
+we may assume these arguments are in sorted order in some order that always
+has offspring before parents.  There always is such an order because no
+individual can be its own ancestor, and such an order can be found by the
+topological sort algorithm \citep[Section~6.6]{aho-et-al}
+which is implemented by R function \texttt{tsort} in R package \texttt{pooh}
+\citep{pooh-package}.
+Thus in what follows we have $B_1 = \cdots = B_r$ for some $r \ge 1$, and
+we have $B_1$ not equal to nor an ancestor of $B_i$ for $i > r$.
+We also adopt the convention $g_S() = 1$, which makes sense because the
+empty set of genes chosen from the empty set of individuals is always contained
+in genes descended from $S$ (because the empty set is contained in any set).
+\begin{theorem} \label{th:g}
+If $B_1$ is not a founder and $S$ contains no genes of $B_1$
+and $B_1 \neq B_2$, then
+\begin{subequations}
+\begin{equation} \label{eq:g-unique}
+   g_S(B_1, \ldots, B_n)
+   =
+   \tfrac{1}{2} g_S(M_1, B_2, \ldots, B_n)
+   + \tfrac{1}{2} g_S(F_1, B_2, \ldots, B_n)
+\end{equation}
+where $F_1$ is the father of $B_1$ and $M_1$ is the mother of $B_1$.
+
+If $B_1$ is not a founder and $S$ contains no genes of $B_1$
+and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
+\begin{multline} \label{eq:g-repeat}
+   g_S(B_1, \ldots, B_n)
+   =
+   (\tfrac{1}{2})^{r - 1} g_S(B_1, B_{r + 1}, \ldots, B_n)
+   \\
+   + \left[ 1 - (\tfrac{1}{2})^{r - 1} \right]
+   g_S(M_1, F_1, B_{r + 1}, \ldots, B_n)
+\end{multline}
+where $F_1$ and $M_1$ are as before.
+
+If $B_1$ is a founder and $S$ contains no genes of $B_1$, then
+\begin{equation} \label{eq:g-boundary-zero}
+   g_S(B_1, \ldots, B_n) = 0.
+\end{equation}
+
+If $S$ contains two genes of $B_1$
+and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
+\begin{equation} \label{eq:g-boundary-two}
+   g_S(B_1, \ldots, B_n) = g_S(B_{r + 1}, \ldots, B_n).
+\end{equation}
+
+If $B_1$ is not a founder and $S$ contains one gene of $B_1$
+and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
+\begin{multline} \label{eq:g-boundary-one-nonfounder}
+   g_S(B_1, \ldots, B_n) =
+   (\tfrac{1}{2})^r g_S(B_{r + 1}, \ldots, B_n)
+   \\
+   +
+   \tfrac{1}{2} \left[ 1 - (\tfrac{1}{2})^r \right]
+   \left[ g_S(F_1, B_{r + 1}, \ldots, B_n)
+   + g_S(M_1, B_{r + 1}, \ldots, B_n) \right].
+\end{multline}
+
+If $B_1$ is a founder and $S$ contains one gene of $B_1$
+and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
+\begin{equation} \label{eq:g-boundary-one-founder}
+   g_S(B_1, \ldots, B_n) =
+   (\tfrac{1}{2})^r g_S(B_{r + 1}, \ldots, B_n).
+\end{equation}
+\end{subequations}
+\end{theorem}
+\begin{proof}
+If $B_1$ is not a founder and $S$ contains no genes of $B_1$
+and $B_1 \neq B_2$, then a gene chosen at random from $B_1$ is equally
+to have come from $F_1$ or $M_1$ and is equally likely to be either of
+the genes in $F_1$ or $M_1$ by Mendel's laws.  Since $B_1$ has no genes
+of $S$, the only way it can have genes descended from $S$ is if they
+come through $F_1$ or $M_1$.
+
+If $B_1$ is not a founder and $S$ contains no genes of $B_1$
+and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
+with probability $(\tfrac{1}{2})^{r - 1}$ the same gene is chosen from
+$B_1$, $\ldots,$ $B_r$, in which case the probability that this gene
+and randomly chosen genes from $B_{r + 1}$, $\ldots,$ $B_n$ are descended
+from $S$ is $g_S(B_1, B_{r + 1}, \ldots, B_n)$.  Otherwise, two different
+genes are chosen from $B_1$, $\ldots,$ $B_r$, in which case one must be
+a randomly chosen gene from $F_1$ and the other must be
+a randomly chosen gene from $M_1$ and the probability that these genes
+and randomly chosen genes from $B_{r + 1}$, $\ldots,$ $B_n$ are descended
+from $S$ is $g_S(M_1, F_1, B_{r + 1}, \ldots, B_n)$.
+
+If $B_1$ is a founder and $S$ contains no genes of $B_1$, then
+from the assumption that none of the ancestors of $B_1$ --- all of whom
+are unknown ---
+are any of the known individuals in the pedigree who collectively contain
+the genes in $S$ it follows that $B_1$ cannot contain any genes descended
+from $S$.
+
+If $S$ contains two genes of $B_1$
+and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
+all genes chosen from $B_1$, $\ldots,$ $B_r$ must come from $S$ because
+they are chosen from these two genes of $B_1$ contained in $S$.
+Hence \eqref{eq:g-boundary-two} holds.
+
+If $B_1$ is not a founder and $S$ contains one gene of $B_1$
+and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
+with probability $(\tfrac{1}{2})^r$ the genes randomly chosen from
+$B_1$, $\ldots,$ $B_r$ are all the one gene of $B_1$ contained in $S$,
+in which case the probability that the genes of $B_{r + 1}$, $\ldots,$ $B_n$
+are descended from $S$ is $g_S(B_{r + 1}, \ldots, B_n)$.
+Otherwise, some of the genes chosen from $B_1$, $\ldots,$ $B_r$ are the
+gene of $B_1$ not contained in $S$, in which case this gene is equally
+likely to have come from $F_1$ or $M_1$,
+in which case the probability that this gene and
+the genes of $B_{r + 1}$, $\ldots,$ $B_n$
+are descended from $S$ is $g_S(F_1, B_{r + 1}, \ldots, B_n)$
+or $g_S(M_1, B_{r + 1}, \ldots, B_n)$.
+
+If $B_1$ is a founder and $S$ contains one gene of $B_1$
+and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
+with probability $(\tfrac{1}{2})^r$ the genes randomly chosen from
+$B_1$, $\ldots,$ $B_r$ are all the one gene of $B_1$ contained in $S$,
+in which case the probability that the genes of $B_{r + 1}$, $\ldots,$ $B_n$
+are descended from $S$ is $g_S(B_{r + 1}, \ldots, B_n)$.
+Otherwise, some of the genes chosen from $B_1$, $\ldots,$ $B_r$ are the
+gene of $B_1$ not contained in $S$, in which case this gene came from some
+ancestor of $B_1$ --- and all these ancestors are unknown, hence none
+are any of the known individuals in the pedigree who collectively contain
+the genes in $S$ --- it follows that the gene of $B_1$ not contained in $S$
+is not descended from $S$.
+\end{proof}
+
+Our equations \eqref{eq:g-unique} through \eqref{eq:g-boundary-one-founder}
+are the unnumbered displayed equations on pp.~{33--34} in \citet{geyer},
+except that two typographical errors have been correct, one minor (a missing
+parenthesis) and one major: what is $1 - (\tfrac{1}{2})^{r - 1}$
+in our \eqref{eq:g-repeat} is $2^{r - 1} - 1$ in \citet{geyer} and in
+\citet[equation (7)]{thompson}.  This error, if reproduced in the code
+for the old S package \texttt{sped}, could have produced probabilities greater
+than one in case $B_1 = B_2 = B_3$.  It looks like this error was \emph{not}
+reproduced in the code
+(see \url{http://users.stat.umn.edu/~geyer/sped/src/gnx.c})
+so that code did not have this particular error.
+
+Our \eqref{eq:g-boundary-zero} through \eqref{eq:g-boundary-one-founder}
+do not appear in \citet{thompson} who says only
+that our \eqref{eq:g-unique} and \eqref{eq:g-repeat} are
+are to be used with boundary conditions that specify when individuals
+$B_i$ have genes in $S$.
+Presumably,
+our \eqref{eq:g-boundary-zero} through \eqref{eq:g-boundary-one-founder}
+are the boundary
+conditions \citeauthor{thompson} referred to, because \citeauthor{geyer}
+was \citeauthor{thompson}'s research assistant when \citet{geyer} was written.
+
+\begin{thebibliography}{}
+
+\bibitem[Aho, et al.(1983)Aho, Hopcroft, and Ullman]{aho-et-al}
+Aho, A.~V., Hopcroft, J.~E., and Ullman, J.~D. (1983).
+\newblock \emph{Data Structures and Algorithms}.
+\newblock Addison-Wesley, Reading, MA.
+
+\bibitem[Geyer(1988)]{geyer}
+Geyer, C.~J. (1988).
+\newblock Software for Calculating Gene Survival and Multigene Descent
+    Probabilities and for Pedigree Manipulation and Drawing.
+\newblock Technical Report No.~153, Department of Statistics,
+    University of Washington.
+\newblock \url{https://www.stat.washington.edu/article/tech-report/software-calculating-gene-survival-and-multigene-descent-probabilities-and}
+
+\bibitem[Geyer(2017)]{pooh-package}
+Geyer, C.~J. (2017).
+\newblock R package \texttt{pooh} (Partial Orders and Relations), version 0.3-2.
+\newblock \url{http://cran.r-project.org/package=pooh}.
+
+\bibitem[Thompson(1983)]{thompson}
+Thompson, E.~A. (1983).
+\newblock Gene extinction and allelic origins in complex genealogies
+    (with discussion).
+\newblock \emph{Proceedings of the Royal Society of London. Series B,
+    Biological Sciences}, \textbf{219}, 241--251.
+\newblock \url{https://doi.org/10.1098/rspb.1983.0072}.
+
+\bibitem[Thompson(1986)]{thompson-1986}
+Thompson, E.~A. (1986).
+\newblock Ancestry of alleles and extinction of genes in populations with
+    defined pedigrees.
+\newblock \emph{Zoo Biology}, \textbf{5}, 161--170.
+\newblock \url{https://doi.org/10.1002/zoo.1430050210}.
+
+\end{thebibliography}
+
+\end{document}
+
