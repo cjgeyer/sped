@@ -1,0 +1,10 @@
+# to add extra compiler warnings
+# note that file myMakevars must be a copy of aster/src/Makevars
+#     with extra stuff added
+export R_MAKEVARS_USER=`pwd`/myMakevars
+
+# if version number has changed
+rm -f sped_*.tar.gz
+
+R CMD build sped
+R CMD check sped_*.tar.gz

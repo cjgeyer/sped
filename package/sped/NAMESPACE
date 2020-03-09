@@ -1,0 +1,7 @@
+
+useDynLib(sped)
+
+export(descent)
+
+importFrom(pooh, tsort)
+
