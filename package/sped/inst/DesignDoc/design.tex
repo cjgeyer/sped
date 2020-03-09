@@ -61,12 +61,16 @@ which is implemented by R function \texttt{tsort} in R package \texttt{pooh}
 Thus in what follows we have $B_1 = \cdots = B_r$ for some $r \ge 1$, and
 we have $B_1$ not equal to nor an ancestor of $B_i$ for $i > r$.
 We also adopt the convention $g_S() = 1$, which makes sense because the
+\begin{subequations}
+\begin{equation} \label{eq:g-empty}
+   g_S() = 1,
+\end{equation}
+which makes sense because the
 empty set of genes chosen from the empty set of individuals is always contained
 in genes descended from $S$ (because the empty set is contained in any set).
 \begin{theorem} \label{th:g}
 If $B_1$ is not a founder and $S$ contains no genes of $B_1$
 and $B_1 \neq B_2$, then
-\begin{subequations}
 \begin{equation} \label{eq:g-unique}
    g_S(B_1, \ldots, B_n)
    =
@@ -116,8 +120,8 @@ and $B_1 = \cdots = B_r$ and $B_1 \neq B_{r + 1}$ or $r = n$, then
    g_S(B_1, \ldots, B_n) =
    (\tfrac{1}{2})^r g_S(B_{r + 1}, \ldots, B_n).
 \end{equation}
-\end{subequations}
 \end{theorem}
+\end{subequations}
 \begin{proof}
 If $B_1$ is not a founder and $S$ contains no genes of $B_1$
 and $B_1 \neq B_2$, then a gene chosen at random from $B_1$ is equally

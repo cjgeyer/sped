@@ -1,4 +1,5 @@
-descent <- function(individuals, pedigree, geneset, check.sex=FALSE) {
+descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
+    debug=FALSE) {
     stopifnot(is.atomic(individuals))
     stopifnot(is.matrix(pedigree))
     stopifnot(ncol(pedigree) == 3)
@@ -8,6 +9,8 @@ descent <- function(individuals, pedigree, geneset, check.sex=FALSE) {
     stopifnot(length(names(geneset)) == length(geneset))
     stopifnot(is.logical(check.sex))
     stopifnot(length(check.sex) == 1)
+    stopifnot(is.logical(debug))
+    stopifnot(length(debug) == 1)
 
     foo <- names(geneset)
     storage.mode(foo) <- storage.mode(pedigree)
@@ -40,7 +43,6 @@ descent <- function(individuals, pedigree, geneset, check.sex=FALSE) {
     genes[match(names(geneset)[geneset == 1], foo)] <- 1L
     genes[match(names(geneset)[geneset == 2], foo)] <- 2L
 
-    .C("descent", nind = length(pa), pa = pa, ma = ma,
-        nargs = length(iargs), args = iargs, genes = genes,
-        result = double(1), PACKAGE = "sped")$result
+    .Call("descent", pa = pa, ma = ma, args = iargs, genes = genes,
+        debug = debug, PACKAGE = "sped")
 }

@@ -1,9 +1,10 @@
 
 #include <R.h>
+#include <Rinternals.h>
 #include <R_ext/Utils.h>
 #include <string.h>
 
-// arguments pa and ma are one-origin indexing, as per R
+// arguments pa and ma are one-origin indexing, as always in R
 // if individual i in zero-origin indexing is a founder, then
 //     should have pa[i] == 0 && ma[i] == 0
 // if individual i in zero-origin indexing is not a founder, then
@@ -11,244 +12,344 @@
 //     and ma[i] - 1 is the zero-origin index of mother,
 //     and in this case the requirement that individuals come before
 //     their parents in the pedigree means pa[i] - 1 > i & ma[i] - 1 > i
-
+//
 // also argument args is one-origin indexing
 
-void descent(int *nind_in, int *pa, int *ma, int *nargs_in, int *args,
-    int *genes, double *result)
+SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug)
 {
-    int nind = nind_in[0];
-    int nargs = nargs_in[0];
     const double half = 1.0 / 2.0;
+
+    int nind = LENGTH(pa);
+    int nargs = LENGTH(args);
 
     if (nind < 1)
         error("number of individuals in pedigree must be at least one");
     if (nargs < 0)
         error("number of individuals in arguments must be at least zero");
 
-    for (int i = 0; i < nind; i++) {
-        if ((pa[i] == 0) != (ma[i] == 0))
-            error("must have both parents in pedigree or none");
-        if ((pa[i] > nind) || (ma[i] > nind)) {
-#ifdef BLATHER
-            Rprintf("nind = %d\n", nind);
-            Rprintf("i = %d (zero-origin indexing)\n", i);
-            Rprintf("pa[i] = %d (one-origin indexing)\n", pa[i]);
-            Rprintf("ma[i] = %d (one-origin indexing)\n", ma[i]);
-#endif // BLATHER
-            error("some parent index points outside of individual indices");
-        }
-        if ((pa[i] != 0) && ((pa[i] - 1 <= i) || (ma[i] - 1 <= i))) {
-#ifdef BLATHER
-            Rprintf("nind = %d\n", nind);
-            Rprintf("i = %d (zero-origin indexing)\n", i);
-            Rprintf("pa[i] = %d (one-origin indexing)\n", pa[i]);
-            Rprintf("ma[i] = %d (one-origin indexing)\n", ma[i]);
-#endif // BLATHER
-            error("some individual comes after one of its parents in pedigree");
+    if (! isLogical(debug))
+        error("argument debug must be type logical");
+    if (LENGTH(debug) != 1)
+        error("argument debug must have length 1");
+    int ldebug = LOGICAL(debug)[0];
+
+    // case (a), equation (1a)
+    if (nargs == 0) {
+        // by convention, nargs == 0 implies result = 1.0;
+        // don't bother with checks on other arguments or even on type of args
+        // except we need to have checked debug
+        if (! ldebug) {
+            return ScalarReal(1.0);
+        } else {
+            SEXP result, resultnames;
+            PROTECT(result = allocVector(VECSXP, 3));
+            PROTECT(resultnames = allocVector(STRSXP, 3));
+            SET_STRING_ELT(resultnames, 0, mkChar("value"));
+            SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
+            SET_STRING_ELT(resultnames, 2, mkChar("type"));
+            namesgets(result, resultnames);
+            SET_VECTOR_ELT(result, 0, ScalarReal(1.0));
+            SET_VECTOR_ELT(result, 1, allocVector(REALSXP, 0));
+            SET_VECTOR_ELT(result, 2, allocVector(STRSXP, 1));
+            SEXP typestring = VECTOR_ELT(result, 2);
+            SET_STRING_ELT(typestring, 0, mkChar("a"));
+            UNPROTECT(2);
+            return result;
         }
     }
 
-    for (int i = 1; i < nargs; i++)
-        if ((args[i] <= 0 || args[i] > nind)) {
-#ifdef OUCH
-            Rprintf("nargs = %d\n", nargs);
-            Rprintf("nind = %d\n", nind);
-            for (int i = 0; i < nargs; i++)
-                Rprintf("args[%d] = %d\n", i, args[i]);
-#endif // OUCH
-            error("argument individuals not range of indices of individuals");
-        }
+    if (! isInteger(pa))
+        error("argument pa must be type integer");
+    if (! isInteger(ma))
+        error("argument ma must be type integer");
+    if (! isInteger(args))
+        error("argument args must be type integer");
+    if (! isInteger(genes))
+        error("argument genes must be type integer");
+
+    if (LENGTH(ma) != nind)
+        error("arguments pa and ma must have same length");
+    if (LENGTH(genes) != nind)
+        error("arguments pa and genes must have same length");
+
+    int *ipa = INTEGER(pa);
+    int *ima = INTEGER(pa);
+    int *iargs = INTEGER(args);
+    int *igenes = INTEGER(genes);
 
     for (int i = 0; i < nind; i++) {
-        int genes_i = genes[i];
+        if ((ipa[i] == 0) != (ima[i] == 0))
+            error("must have both parents in pedigree or none");
+        if ((ipa[i] > nind) || (ima[i] > nind))
+            error("some parent index points outside of individual indices");
+        if ((ipa[i] != 0) && ((ipa[i] - 1 <= i) || (ima[i] - 1 <= i)))
+            error("some individual comes after one of its parents in pedigree");
+    }
+
+    for (int i = 1; i < nargs; i++)
+        if ((iargs[i] <= 0 || iargs[i] > nind))
+            error("argument individuals not range of indices of individuals");
+
+    for (int i = 0; i < nind; i++) {
+        int genes_i = igenes[i];
         if ((genes_i != 0) && (genes_i != 1) && (genes_i != 2))
             error("genes not 0, 1, or 2");
     }
 
-    // end of checks
-
     // now refer to Theorem 1 in design document
 
-    // by convention, nargs == 0 implies result = 1.0;
-    if (nargs == 0) {
-        result[0] = 1.0;
-        return;
-    }
-
     // sort args
-    isort(args, nargs);
+    R_isort(iargs, nargs);
 
-    int b1 = args[0];
+    int b1 = iargs[0];
     int r = 1;
-    while ((r < nargs) && (args[r] == b1)) r = r + 1;
-
-    // case (a), equation (1a)
-    if ((pa[b1 - 1] != 0) && (genes[b1 - 1] == 0) && (r == 1)) {
-        double foo, bar;
-        int *myargs = (int *) R_alloc(nargs, sizeof(int));
-        memcpy(myargs, args, nargs);
-        myargs[0] = pa[b1 - 1];
-        descent(&nind, pa, ma, &nargs, myargs, genes, &foo);
-        myargs[0] = ma[b1 - 1];
-        descent(&nind, pa, ma, &nargs, args, genes, &bar);
-        result[0] = half * (foo + bar);
-#ifdef WOOF
-        Rprintf("nargs = %d, ", nargs);
-        if (nargs == 0) {
-            Rprintf("descent called with no argument individuals");
-        } else {
-            Rprintf("descent called with argument individuals %d", args[0]);
-            for (int i = 1; i < nargs; i++)
-                Rprintf(", %d", args[i]);
-        }
-        Rprintf(" (case a), result = %10.5g\n", result[0]);
-#endif // WOOF
-        return;
-    }
+    while ((r < nargs) && (iargs[r] == b1)) r = r + 1;
 
     // case (b), equation (1b)
-    if ((pa[b1 - 1] != 0) && (genes[b1 - 1] == 0) && (r > 1)) {
-        double half_r_minus_one = half;
-        for (int i = 2; i < r; i++) half_r_minus_one *= half;
-        double foo, bar;
-        int mynargs = nargs - r + 1;
-        // add one extra at end for next use
-        int *myargs = (int *) R_alloc(mynargs + 1, sizeof(int));
-        myargs[0] = b1;
-        memcpy(myargs + 1, args + r, nargs - r);
-        descent(&nind, pa, ma, &mynargs, myargs, genes, &foo);
-        mynargs += 1;
-        myargs[0] = pa[b1 - 1];
-        myargs[1] = ma[b1 - 1];
-        memcpy(myargs + 2, args + r, nargs - r);
-        descent(&nind, pa, ma, &mynargs, myargs, genes, &bar);
-        result[0] = half_r_minus_one * foo + (1.0 - half_r_minus_one) * bar;
-#ifdef WOOF
-        if (nargs == 0) {
-            Rprintf("descent called with no argument individuals");
+    if ((ipa[b1 - 1] != 0) && (igenes[b1 - 1] == 0) && (r == 1)) {
+        SEXP myargs;
+        PROTECT(myargs = allocVector(INTSXP, nargs));
+        memcpy(INTEGER(myargs), iargs, nargs);
+        INTEGER(myargs)[0] = ipa[b1 - 1];
+        SEXP foo, bar;
+        PROTECT(foo = descent(pa, ma, myargs, genes, debug));
+        INTEGER(myargs)[0] = ima[b1 - 1];
+        PROTECT(bar = descent(pa, ma, myargs, genes, debug));
+        if (! ldebug) {
+            double dfoo = REAL(foo)[0];
+            double dbar = REAL(bar)[0];
+            double dvalue = half * (dfoo + dbar);
+            UNPROTECT(3);
+            return ScalarReal(dvalue);
         } else {
-            Rprintf("descent called with argument individuals %d", args[0]);
-            for (int i = 1; i < nargs; i++)
-                Rprintf(", %d", args[i]);
+            SEXP result, resultnames;
+            PROTECT(result = allocVector(VECSXP, 4));
+            PROTECT(resultnames = allocVector(STRSXP, 4));
+            SET_STRING_ELT(resultnames, 0, mkChar("value"));
+            SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
+            SET_STRING_ELT(resultnames, 2, mkChar("type"));
+            SET_STRING_ELT(resultnames, 3, mkChar("calls"));
+            namesgets(result, resultnames);
+            double dfoo = REAL(VECTOR_ELT(foo, 0))[0];
+            double dbar = REAL(VECTOR_ELT(bar, 0))[0];
+            double dvalue = half * (dfoo + dbar);
+            SET_VECTOR_ELT(result, 0, ScalarReal(dvalue));
+            SET_VECTOR_ELT(result, 1, duplicate(args));
+            SET_VECTOR_ELT(result, 2, allocVector(STRSXP, 1));
+            SEXP typestring = VECTOR_ELT(result, 2);
+            SET_STRING_ELT(typestring, 0, mkChar("b"));
+            SET_VECTOR_ELT(result, 3, allocVector(VECSXP, 2));
+            SEXP calls = VECTOR_ELT(result, 3);
+            SET_VECTOR_ELT(calls, 0, foo);
+            SET_VECTOR_ELT(calls, 1, bar);
+            UNPROTECT(5);
+            return result;
         }
-        Rprintf(" (case b), result = %10.5g\n", result[0]);
-#endif // WOOF
-        return;
     }
 
     // case (c), equation (1c)
-    if ((pa[b1 - 1] == 0) && (genes[b1 - 1] == 0)) {
-        result[0] = 0.0;
-#ifdef WOOF
-        if (nargs == 0) {
-            Rprintf("descent called with no argument individuals");
+    if ((ipa[b1 - 1] != 0) && (igenes[b1 - 1] == 0) && (r > 1)) {
+        double half_r_minus_one = half;
+        for (int i = 2; i < r; i++) half_r_minus_one *= half;
+        int mynargs = nargs - r + 1;
+        SEXP myargs;
+        PROTECT(myargs = allocVector(INTSXP, mynargs));
+        INTEGER(myargs)[0] = b1;
+        memcpy(INTEGER(myargs) + 1, INTEGER(args) + r, nargs - r);
+        SEXP foo;
+        PROTECT(foo = descent(pa, ma, myargs, genes, debug));
+        mynargs += 1;
+        PROTECT(myargs = allocVector(INTSXP, mynargs));
+        INTEGER(myargs)[0] = ipa[b1 - 1];
+        INTEGER(myargs)[1] = ima[b1 - 1];
+        memcpy(INTEGER(myargs) + 2, INTEGER(args) + r, nargs - r);
+        SEXP bar;
+        PROTECT(bar = descent(pa, ma, myargs, genes, debug));
+        if (! ldebug) {
+            double dfoo = REAL(foo)[0];
+            double dbar = REAL(bar)[0];
+            double dvalue = half_r_minus_one * dfoo +
+                (1.0 - half_r_minus_one) * dbar;
+            UNPROTECT(3);
+            return ScalarReal(dvalue);
         } else {
-            Rprintf("descent called with argument individuals %d", args[0]);
-            for (int i = 1; i < nargs; i++)
-                Rprintf(", %d", args[i]);
+            SEXP result, resultnames;
+            PROTECT(result = allocVector(VECSXP, 4));
+            PROTECT(resultnames = allocVector(STRSXP, 4));
+            SET_STRING_ELT(resultnames, 0, mkChar("value"));
+            SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
+            SET_STRING_ELT(resultnames, 2, mkChar("type"));
+            SET_STRING_ELT(resultnames, 3, mkChar("calls"));
+            namesgets(result, resultnames);
+            double dfoo = REAL(VECTOR_ELT(foo, 0))[0];
+            double dbar = REAL(VECTOR_ELT(bar, 0))[0];
+            double dvalue = half_r_minus_one * dfoo +
+                (1.0 - half_r_minus_one) * dbar;
+            SET_VECTOR_ELT(result, 0, ScalarReal(dvalue));
+            SET_VECTOR_ELT(result, 1, duplicate(args));
+            SET_VECTOR_ELT(result, 2, allocVector(STRSXP, 1));
+            SEXP typestring = VECTOR_ELT(result, 2);
+            SET_STRING_ELT(typestring, 0, mkChar("c"));
+            SET_VECTOR_ELT(result, 3, allocVector(VECSXP, 2));
+            SEXP calls = VECTOR_ELT(result, 3);
+            SET_VECTOR_ELT(calls, 0, foo);
+            SET_VECTOR_ELT(calls, 1, bar);
+            UNPROTECT(5);
+            return result;
         }
-        Rprintf(" (case c), result = %10.5g\n", result[0]);
-#endif // WOOF
-        return;
     }
 
     // case (d), equation (1d)
-    if ((genes[b1 - 1] == 2) && (r > 1)) {
-        double foo;
-        int mynargs = nargs - r;
-        // again, by convention, nargs == 0 implies result = 1.0;
-        if (mynargs == 0) {
-            result[0] = 1.0;
-#ifdef WOOF
-            if (nargs == 0) {
-                Rprintf("descent called with no argument individuals");
-            } else {
-                Rprintf("descent called with argument individuals %d", args[0]);
-                for (int i = 1; i < nargs; i++)
-                    Rprintf(", %d", args[i]);
-            }
-            Rprintf(" (case d), result = %10.5g\n", result[0]);
-#endif // WOOF
-            return;
-        }
-        int *myargs = (int *) R_alloc(mynargs, sizeof(int));
-        memcpy(myargs, args + r, nargs - r);
-        descent(nind_in, pa, ma, &mynargs, myargs, genes, &foo);
-        result[0] = foo; 
-#ifdef WOOF
-        if (nargs == 0) {
-            Rprintf("descent called with no argument individuals");
+    if ((ipa[b1 - 1] == 0) && (igenes[b1 - 1] == 0)) {
+        if (! ldebug) {
+            return ScalarReal(0.0);
         } else {
-            Rprintf("descent called with argument individuals %d", args[0]);
-            for (int i = 1; i < nargs; i++)
-                Rprintf(", %d", args[i]);
+            SEXP result, resultnames;
+            PROTECT(result = allocVector(VECSXP, 3));
+            PROTECT(resultnames = allocVector(STRSXP, 3));
+            SET_STRING_ELT(resultnames, 0, mkChar("value"));
+            SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
+            SET_STRING_ELT(resultnames, 2, mkChar("type"));
+            namesgets(result, resultnames);
+            SET_VECTOR_ELT(result, 0, ScalarReal(0.0));
+            SET_VECTOR_ELT(result, 1, duplicate(args));
+            SET_VECTOR_ELT(result, 2, allocVector(STRSXP, 1));
+            SEXP typestring = VECTOR_ELT(result, 2);
+            SET_STRING_ELT(typestring, 0, mkChar("d"));
+            UNPROTECT(2);
+            return result;
         }
-        Rprintf(" (case d), result = %10.5g\n", result[0]);
-#endif // WOOF
-        return;
     }
 
     // case (e), equation (1e)
-    if ((pa[b1 - 1] != 0) && (genes[b1 - 1] == 1)) {
-        double half_r = half;
-        for (int i = 2; i <= r; i++) half_r *= half;
-        double foo, bar, baz;
+    if ((igenes[b1 - 1] == 2) && (r > 1)) {
         int mynargs = nargs - r;
-        // add one extra at end for next use
-        int *myargs = (int *) R_alloc(mynargs + 1, sizeof(int));
-        memcpy(myargs, args + r, nargs - r);
-        // again, by convention, nargs == 0 implies result = 1.0;
-        if (mynargs == 0)
-            foo = 1.0;
-        else
-            descent(nind_in, pa, ma, &mynargs, myargs, genes, &foo);
-        mynargs += 1;
-        myargs[0] = pa[b1 - 1];
-        memcpy(myargs + 1, args + r, nargs - r);
-        descent(nind_in, pa, ma, &mynargs, myargs, genes, &bar);
-        myargs[0] = ma[b1 - 1];
-        descent(nind_in, pa, ma, &mynargs, myargs, genes, &baz);
-        result[0] = half_r * foo + half * (1.0 - half_r) * (bar + baz);
-#ifdef WOOF
-        if (nargs == 0) {
-            Rprintf("descent called with no argument individuals");
+        SEXP myargs;
+        PROTECT(myargs = allocVector(INTSXP, mynargs));
+        memcpy(INTEGER(myargs), INTEGER(args) + r, nargs - r);
+        SEXP foo;
+        PROTECT(foo = descent(pa, ma, myargs, genes, debug));
+        if (! ldebug) {
+            double dvalue = REAL(foo)[0];
+            UNPROTECT(2);
+            return ScalarReal(dvalue);
         } else {
-            Rprintf("descent called with argument individuals %d", args[0]);
-            for (int i = 1; i < nargs; i++)
-                Rprintf(", %d", args[i]);
+            SEXP result, resultnames;
+            PROTECT(result = allocVector(VECSXP, 4));
+            PROTECT(resultnames = allocVector(STRSXP, 4));
+            SET_STRING_ELT(resultnames, 0, mkChar("value"));
+            SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
+            SET_STRING_ELT(resultnames, 2, mkChar("type"));
+            SET_STRING_ELT(resultnames, 3, mkChar("calls"));
+            namesgets(result, resultnames);
+            double dvalue = REAL(VECTOR_ELT(foo, 0))[0];
+            SET_VECTOR_ELT(result, 0, ScalarReal(dvalue));
+            SET_VECTOR_ELT(result, 1, duplicate(args));
+            SET_VECTOR_ELT(result, 2, allocVector(STRSXP, 1));
+            SEXP typestring = VECTOR_ELT(result, 2);
+            SET_STRING_ELT(typestring, 0, mkChar("e"));
+            SET_VECTOR_ELT(result, 3, allocVector(VECSXP, 1));
+            SEXP calls = VECTOR_ELT(result, 3);
+            SET_VECTOR_ELT(calls, 0, foo);
+            UNPROTECT(4);
+            return result;
         }
-        Rprintf(" (case e), result = %10.5g\n", result[0]);
-#endif // WOOF
-        return;
+
     }
 
     // case (f), equation (1f)
-    if ((pa[b1 - 1] == 0) && (genes[b1 - 1] == 1)) {
+    if ((ipa[b1 - 1] != 0) && (igenes[b1 - 1] == 1)) {
         double half_r = half;
         for (int i = 2; i <= r; i++) half_r *= half;
-        double foo;
         int mynargs = nargs - r;
-        // again, by convention, nargs == 0 implies result = 1.0;
-        if (mynargs == 0) {
-            foo = 1.0;
+        SEXP myargs;
+        PROTECT(myargs = allocVector(INTSXP, mynargs));
+        memcpy(INTEGER(myargs), INTEGER(args) + r, nargs - r);
+        SEXP foo;
+        PROTECT(foo = descent(pa, ma, myargs, genes, debug));
+        mynargs += 1;
+        PROTECT(myargs = allocVector(INTSXP, mynargs));
+        INTEGER(myargs)[0] = ipa[b1 - 1];
+        memcpy(INTEGER(myargs) + 1, INTEGER(args) + r, nargs - r);
+        SEXP bar;
+        PROTECT(bar = descent(pa, ma, myargs, genes, debug));
+        INTEGER(myargs)[0] = ima[b1 - 1];
+        SEXP baz;
+        PROTECT(baz = descent(pa, ma, myargs, genes, debug));
+        if (! ldebug) {
+            double dfoo = REAL(foo)[0];
+            double dbar = REAL(bar)[0];
+            double dbaz = REAL(baz)[0];
+            double dvalue = half_r * dfoo +
+                half * (1.0 - half_r) * (dbar + dbaz);
+            UNPROTECT(3);
+            return ScalarReal(dvalue);
         } else {
-            int *myargs = (int *) R_alloc(mynargs, sizeof(int));
-            memcpy(myargs, args + r, nargs - r);
-            descent(nind_in, pa, ma, &mynargs, myargs, genes, &foo);
+            SEXP result, resultnames;
+            PROTECT(result = allocVector(VECSXP, 4));
+            PROTECT(resultnames = allocVector(STRSXP, 4));
+            SET_STRING_ELT(resultnames, 0, mkChar("value"));
+            SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
+            SET_STRING_ELT(resultnames, 2, mkChar("type"));
+            SET_STRING_ELT(resultnames, 3, mkChar("calls"));
+            namesgets(result, resultnames);
+            double dfoo = REAL(VECTOR_ELT(foo, 0))[0];
+            double dbar = REAL(VECTOR_ELT(bar, 0))[0];
+            double dbaz = REAL(VECTOR_ELT(baz, 0))[0];
+            double dvalue = half_r * dfoo +
+                half * (1.0 - half_r) * (dbar + dbaz);
+            SET_VECTOR_ELT(result, 0, ScalarReal(dvalue));
+            SET_VECTOR_ELT(result, 1, duplicate(args));
+            SET_VECTOR_ELT(result, 2, allocVector(STRSXP, 1));
+            SEXP typestring = VECTOR_ELT(result, 2);
+            SET_STRING_ELT(typestring, 0, mkChar("f"));
+            SET_VECTOR_ELT(result, 3, allocVector(VECSXP, 3));
+            SEXP calls = VECTOR_ELT(result, 3);
+            SET_VECTOR_ELT(calls, 0, foo);
+            SET_VECTOR_ELT(calls, 1, bar);
+            SET_VECTOR_ELT(calls, 2, baz);
+            UNPROTECT(5);
+            return result;
         }
-        result[0] = half_r * foo;
-#ifdef WOOF
-        if (nargs == 0) {
-            Rprintf("descent called with no argument individuals");
+    }
+
+    // case (g), equation (1g)
+    if ((ipa[b1 - 1] == 0) && (igenes[b1 - 1] == 1)) {
+        double half_r = half;
+        for (int i = 2; i <= r; i++) half_r *= half;
+        int mynargs = nargs - r;
+        SEXP myargs;
+        PROTECT(myargs = allocVector(INTSXP, mynargs));
+        memcpy(INTEGER(myargs), INTEGER(args) + r, nargs - r);
+        SEXP foo;
+        PROTECT(foo = descent(pa, ma, myargs, genes, debug));
+        if (! ldebug) {
+            double dfoo = REAL(foo)[0];
+            double dvalue = half_r * dfoo;
+            UNPROTECT(2);
+            return ScalarReal(dvalue);
         } else {
-            Rprintf("descent called with argument individuals %d", args[0]);
-            for (int i = 1; i < nargs; i++)
-                Rprintf(", %d", args[i]);
+            SEXP result, resultnames;
+            PROTECT(result = allocVector(VECSXP, 4));
+            PROTECT(resultnames = allocVector(STRSXP, 4));
+            SET_STRING_ELT(resultnames, 0, mkChar("value"));
+            SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
+            SET_STRING_ELT(resultnames, 2, mkChar("type"));
+            SET_STRING_ELT(resultnames, 3, mkChar("calls"));
+            namesgets(result, resultnames);
+            double dfoo = REAL(VECTOR_ELT(foo, 0))[0];
+            double dvalue = half_r * dfoo;
+            SET_VECTOR_ELT(result, 0, ScalarReal(dvalue));
+            SET_VECTOR_ELT(result, 1, duplicate(args));
+            SET_VECTOR_ELT(result, 2, allocVector(STRSXP, 1));
+            SEXP typestring = VECTOR_ELT(result, 2);
+            SET_STRING_ELT(typestring, 0, mkChar("g"));
+            SET_VECTOR_ELT(result, 3, allocVector(VECSXP, 1));
+            SEXP calls = VECTOR_ELT(result, 3);
+            SET_VECTOR_ELT(calls, 0, foo);
+            UNPROTECT(4);
+            return result;
         }
-        Rprintf(" (case f), result = %10.5g\n", result[0]);
-#endif // WOOF
-        return;
     }
 
     // should never happen

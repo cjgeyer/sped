@@ -7,7 +7,7 @@
   of individuals are descended from some specified set of genes.
 }
 \usage{
-descent(individuals, pedigree, geneset, check.sex=FALSE)
+descent(individuals, pedigree, geneset, check.sex=FALSE, debug=FALSE)
 }
 \arguments{
   \item{individuals}{an atomic vector of names of individuals.}
@@ -19,6 +19,8 @@ descent(individuals, pedigree, geneset, check.sex=FALSE)
       may be omitted.}
   \item{check.sex}{If \code{TRUE} check that no individual appears in both
       the father column and the mother column of argument \code{pedigree}.}
+  \item{debug}{If \code{TRUE} provide individuals and value for each
+      recursive call.}
 }
 \details{
 We work relative to the pedigree defined by argument \code{pedigree} in
@@ -37,7 +39,19 @@ can be repeats). The individuals are specified by argument \code{individuals}.
 The gene set \eqn{S} is specified by argument \code{geneset}.
 }
 \value{
-a scalar: the calculated probability.
+If \code{debug == FALSE}, a scalar: the calculated probability.
+If \code{debug == TRUE}, a list, having components
+
+\item{value}{what would have been returned if \code{debug == FALSE}.}
+\item{individuals}{the argument \code{individuals} to this call.}
+\item{type}{a letter from "a" to "f" corresponding to the
+    equation numbers in Theorem 1 in the design document, which is
+    found in the DesignDoc directory of the installed package.}
+\item{calls}{a list of calls (this function calls itself recursively).
+    Each item in this list is itself a list having components \code{value},
+    \code{individuals}, and (perhaps) \code{calls}.  Depending on the type
+    there may be from zero to three calls.  If there are zero calls, then
+    there is no \code{calls} item.}
 }
 \references{
 Geyer, C.~J. (1988)
