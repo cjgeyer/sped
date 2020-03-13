@@ -10,7 +10,8 @@
 descent(individuals, pedigree, geneset, check.sex=FALSE, debug=FALSE)
 }
 \arguments{
-  \item{individuals}{an atomic vector of names of individuals.}
+  \item{individuals}{an atomic vector of names of individuals.  Must be
+      of type integer or character.}
   \item{pedigree}{a matrix with three columns. Each row contains the name
       of an individual and its father and mother, in that order.  Must be
       the same type as the preceding argument.}
@@ -50,8 +51,7 @@ If \code{debug == TRUE}, a list, having components
 \item{calls}{a list of calls (this function calls itself recursively).
     Each item in this list is itself a list having components \code{value},
     \code{individuals}, and (perhaps) \code{calls}.  Depending on the type
-    there may be from zero to three calls.  If there are zero calls, then
-    there is no \code{calls} item.}
+    there may be from zero to three calls.}
 }
 \references{
 Geyer, C.~J. (1988)
@@ -65,12 +65,12 @@ Thompson, E. A. (1983)
 Gene extinction and allelic origins in complex genealogies (with discussion).
 \emph{Proceedings of the Royal Society of London. Series B,
     Biological Sciences}, \bold{219}, 241--251.
-\url{doi:10.1098/rspb.1983.0072}.
+\doi{doi:10.1098/rspb.1983.0072}.
 
 Thompson, E. A. (1986)
 Ancestry of alleles and extinction of genes in populations with defined
     pedigrees.
 \emph{Zoo Biology}, \bold{5}, 161--170.
-\url{doi:10.1002/zoo.1430050210}.
+\doi{doi:10.1002/zoo.1430050210}.
 }
 \keyword{misc}

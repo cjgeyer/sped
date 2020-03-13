@@ -1,0 +1,6 @@
+ind pa ma
+spot rover lassie
+duke rover lassie
+bear rover lassie
+rover goofy daisy
+lassie goofy aster

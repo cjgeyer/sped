@@ -1,5 +1,5 @@
 
-useDynLib(sped)
+useDynLib(sped, .registration = TRUE, .fixes = "C_")
 
 export(descent)
 

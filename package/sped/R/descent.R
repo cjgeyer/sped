@@ -1,8 +1,17 @@
 descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
     debug=FALSE) {
-    stopifnot(is.atomic(individuals))
+    stopifnot(is.character(individuals) || is.numeric(individuals))
+    if (is.numeric(individuals))
+        storage.mode(individuals) <- "integer"
+    if (is.integer(individuals) && any(individuals <= 0))
+        stop("individuals, if integer-valued, must be positive-valued")
     stopifnot(is.matrix(pedigree))
     stopifnot(ncol(pedigree) == 3)
+    stopifnot(is.character(pedigree) || is.numeric(pedigree))
+    if (is.numeric(pedigree))
+        storage.mode(pedigree) <- "integer"
+    if (is.integer(pedigree) && any(pedigree <= 0))
+        stop("pedigree, if integer-valued, must be positive-valued")
     stopifnot(typeof(individuals) == typeof(pedigree))
     stopifnot(individuals %in% pedigree)
     stopifnot(geneset %in% 0:2)
@@ -43,6 +52,6 @@ descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
     genes[match(names(geneset)[geneset == 1], foo)] <- 1L
     genes[match(names(geneset)[geneset == 2], foo)] <- 2L
 
-    .Call("descent", pa = pa, ma = ma, args = iargs, genes = genes,
-        debug = debug, PACKAGE = "sped")
+    .Call(C_descent, pa = pa, ma = ma, args = iargs, genes = genes,
+        debug = debug, names = foo)
 }
