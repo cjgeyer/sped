@@ -45,12 +45,12 @@ If \code{debug == TRUE}, a list, having components
 
 \item{value}{what would have been returned if \code{debug == FALSE}.}
 \item{individuals}{the argument \code{individuals} to this call.}
-\item{type}{a letter from "a" to "f" corresponding to the
+\item{type}{a letter from \code{"a"} to \code{"g"} corresponding to the
     equation numbers in Theorem 1 in the design document, which is
     found in the DesignDoc directory of the installed package.}
 \item{calls}{a list of calls (this function calls itself recursively).
     Each item in this list is itself a list having components \code{value},
-    \code{individuals}, and (perhaps) \code{calls}.  Depending on the type
+    \code{individuals}, and \code{calls}.  Depending on the type
     there may be from zero to three calls.}
 }
 \references{

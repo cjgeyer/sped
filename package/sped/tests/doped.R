@@ -1,11 +1,11 @@
 
- library(sped, lib.loc = "../package/sped.Rcheck")
+ library(sped)
 
  ped <- read.table("ped.txt", header = TRUE, stringsAsFactors = FALSE)
  ped <- as.matrix(ped)
  ped
 
- gen <- list(goofy = 1)
+ gen <- c(goofy = 1)
  gen
 
  checkitout <- function(foo) {
@@ -170,18 +170,41 @@
     return("OK")
  }
 
+ checkcases <- function(foo) {
+
+      ncases <- letters[letters <= "g"]
+      cases <- rep(0, length(ncases))
+      names(cases) <- ncases
+
+      foompter <- function(foo) {
+          cases[ncases == foo$type] <<- cases[ncases == foo$type] + 1
+          lapply(foo$calls, foompter)
+      }
+
+      foompter(foo)
+      return(cases)
+ }
+
  # case (a) empty individuals list
 
  descent(character(0), ped, gen, debug = TRUE)
 
  # case (b) B_1 is not a founder and not repeated and contains no genes in S
 
- foo <- descent("spot", ped, list(goofy = 1), debug = TRUE)
- foo
+ foo <- descent("spot", ped, gen, debug = TRUE)
  checkitout(foo)
+ checkcases(foo)
 
  # case (c) B_1 is not a founder, is repeated, and contains no genes of S
- foo <- descent(c("spot", "spot", "duke"), ped, list(goofy = 1), debug = TRUE)
- foo
+ foo <- descent(c("spot", "spot", "duke"), ped, gen, debug = TRUE)
  checkitout(foo)
+ checkcases(foo)
 
+ # case (f) B_1 is not founder and contains 1 gene of S
+
+ gen <- c(rover = 1, aster = 2)
+ gen
+
+ foo <- descent(c("spot", "spot", "duke"), ped, gen, debug = TRUE)
+ checkitout(foo)
+ checkcases(foo)

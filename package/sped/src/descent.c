@@ -99,6 +99,8 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
         memcpy(INTEGER(myargs), iargs, nargs * sizeof(int));
         INTEGER(myargs)[0] = ipa[b1 - 1];
         PROTECT(foo = descent(pa, ma, myargs, genes, debug, names));
+        // need following because descent reorders its 2nd argument (args)
+        memcpy(INTEGER(myargs), iargs, nargs * sizeof(int));
         INTEGER(myargs)[0] = ima[b1 - 1];
         PROTECT(bar = descent(pa, ma, myargs, genes, debug, names));
         double dfoo = get_value(foo);
@@ -139,7 +141,7 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
         return result_and_debug_info(0.0, "d", args, ldebug, names, 0);
 
     // case (e), equation (1e)
-    if ((igenes[b1 - 1] == 2) && (r > 1)) {
+    if (igenes[b1 - 1] == 2) {
         int mynargs = nargs - r;
         SEXP myargs, foo;
         PROTECT(myargs = allocVector(INTSXP, mynargs));
@@ -165,6 +167,8 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
         memcpy(INTEGER(myargs) + 1, iargs + r, (nargs - r) * sizeof(int));
         PROTECT(bar = descent(pa, ma, myargs, genes, debug, names));
         INTEGER(myargs)[0] = ima[b1 - 1];
+        // need following because descent reorders its 2nd argument (args)
+        memcpy(INTEGER(myargs) + 1, iargs + r, (nargs - r) * sizeof(int));
         PROTECT(baz = descent(pa, ma, myargs, genes, debug, names));
         double dfoo = get_value(foo);
         double dbar = get_value(bar);
@@ -191,7 +195,18 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
     }
 
     // should never happen
-    error("got to bottom of function without executing",
+#ifdef BLEAT
+    int is_integer_names = isInteger(names);
+    for (int i = 0; i < nargs; i++)
+        if (is_integer_names)
+            REprintf("args[%d] = %d\n", i + 1, INTEGER(names)[iargs[i] - 1]);
+        else
+            REprintf("args[%d] = %s\n", i + 1,
+                CHAR(STRING_ELT(names, iargs[i] - 1)));
+        REprintf("b1 = %s\n", CHAR(STRING_ELT(names, b1 - 1)));
+        REprintf("number of b1 genes in S = %d\n", igenes[b1 - 1]);
+#endif /* BLEAT */
+    error("got to bottom of function without executing"
         " previous return statement\n");
 }
 
