@@ -31,8 +31,6 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
 
     if (nind < 1)
         error("number of individuals in pedigree must be at least one");
-    if (nargs < 0)
-        error("number of individuals in arguments must be at least zero");
 
     if (! isLogical(debug))
         error("argument debug must be type logical");
@@ -64,28 +62,15 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
     for (int i = 0; i < nind; i++) {
         if ((ipa[i] == 0) != (ima[i] == 0))
             error("must have both parents in pedigree or none");
-        if ((ipa[i] > nind) || (ima[i] > nind)) {
-#ifdef BLEAT
-            REprintf("i = %d\n", i);
-            REprintf("nind = %d\n", nind);
-            REprintf("ipa[%d] = %d\n", i, ipa[i]);
-            REprintf("ima[%d] = %d\n", i, ima[i]);
-#endif // BLEAT
+        if ((ipa[i] > nind) || (ima[i] > nind))
             error("some parent index points outside of individual indices");
-        }
         if ((ipa[i] != 0) && ((ipa[i] - 1 <= i) || (ima[i] - 1 <= i)))
             error("some individual comes after one of its parents in pedigree");
     }
 
     for (int i = 1; i < nargs; i++)
-        if ((iargs[i] <= 0 || iargs[i] > nind)) {
-#ifdef BLEAT
-            REprintf("i = %d\n", i);
-            REprintf("nind = %d\n", nind);
-            REprintf("iargs[%d] = %d\n", i, iargs[i]);
-#endif // BLEAT
+        if ((iargs[i] <= 0 || iargs[i] > nind))
             error("argument individuals not range of indices of individuals");
-        }
 
     for (int i = 0; i < nind; i++) {
         int genes_i = igenes[i];
@@ -93,7 +78,7 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
             error("genes not 0, 1, or 2");
     }
 
-    // now refer to Theorem 1 in design document
+    // now refer to Theorem 1 in design document (in inst/DesignDoc)
 
     // sort args
     R_isort(iargs, nargs);
@@ -227,8 +212,8 @@ static SEXP result_and_debug_info(double value, char *type, SEXP args,
 
     // otherwise debug
     SEXP result, resultnames;
-    PROTECT(result = allocVector(VECSXP, 3));
-    PROTECT(resultnames = allocVector(STRSXP, 3));
+    PROTECT(result = allocVector(VECSXP, 4));
+    PROTECT(resultnames = allocVector(STRSXP, 4));
     SET_STRING_ELT(resultnames, 0, mkChar("value"));
     SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
     SET_STRING_ELT(resultnames, 2, mkChar("type"));

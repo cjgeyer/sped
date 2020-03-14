@@ -6,7 +6,7 @@
   Pedigree of Asian wild horse (also called Mongolian wild horse)
   \emph{Equus przewalskii} individuals living in Alberta, Canada in 1988.
 }
-\usage{alberta}
+\usage{data(alberta)}
 \format{
 A matrix with 69 rows giving (individual, father, mother) triplets.
 The column labels are \code{ind}, \code{pa}, and \code{ma}.
@@ -17,5 +17,6 @@ There are \eqn{82 - 69 = 13} founders.
 \examples{
 library(sped)
 data(alberta)
+head(alberta)
 }
 \keyword{datasets}
