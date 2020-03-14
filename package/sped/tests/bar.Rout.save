@@ -1,0 +1,40 @@
+
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> # attempt to reproduce some of the numbers from U of Washington Statistics
+> # Tech Report 153 (Geyer, 1988) cited in the help page for R function
+> # descent in this package.
+> 
+> library(sped)
+> data(alberta)
+> 
+> # In alberta pedigree, probability that one gene picked at random
+> # from individuals 1085, 1094, 1180, 1260, and 1272 are each descended
+> # from one gene in founder 52.
+> # TR says 0.0156250, 0.0156250, 0.0078125, 0.0312500, 0.0078125
+> 
+> 
+> vescent <- Vectorize(descent, vectorize.args = "individuals")
+> foo <- vescent(c(1085, 1094, 1180, 1260, 1272), alberta, c("52"=1))
+> all(all.equal(foo, c(0.0156250, 0.0156250, 0.0078125, 0.0312500, 0.0078125)))
+[1] TRUE
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  0.242   0.025   0.254 
