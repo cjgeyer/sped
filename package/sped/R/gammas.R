@@ -1,10 +1,5 @@
-descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
-    debug=FALSE) {
-    cat("1: typeof(individuals) =", typeof(individuals), "\n", file = stderr())
-    stopifnot(is.character(individuals) || is.numeric(individuals))
-    if (is.numeric(individuals))
-        storage.mode(individuals) <- "integer"
-    cat("2: typeof(individuals) =", typeof(individuals), "\n", file = stderr())
+
+gammas <- function(individuals, pedigree) {
     if (is.integer(individuals) && any(individuals <= 0))
         stop("individuals, if integer-valued, must be positive-valued")
     stopifnot(is.matrix(pedigree))
@@ -14,8 +9,23 @@ descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
         storage.mode(pedigree) <- "integer"
     if (is.integer(pedigree) && any(pedigree <= 0))
         stop("pedigree, if integer-valued, must be positive-valued")
-    cat("3: typeof(individuals) =", typeof(individuals), "\n", file = stderr())
-    cat("3: typeof(pedigree) =", typeof(pedigree), "\n", file = stderr())
+    stopifnot(typeof(individuals) == typeof(pedigree))
+    stopifnot(individuals %in% pedigree)
+}
+
+descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
+    debug=FALSE) {
+    if (is.integer(individuals) && any(individuals <= 0))
+        stop("individuals, if integer-valued, must be positive-valued")
+    stopifnot(is.matrix(pedigree))
+    stopifnot(ncol(pedigree) == 3)
+    stopifnot(is.character(pedigree) || is.numeric(pedigree))
+    if (is.numeric(pedigree))
+        storage.mode(pedigree) <- "integer"
+    if (is.integer(pedigree) && any(pedigree <= 0))
+        stop("pedigree, if integer-valued, must be positive-valued")
+    cat("typeof(individuals) =", typeof(individuals), "\n", file = stderr())
+    cat("typeof(pedigree) =", typeof(pedigree), "\n", file = stderr())
     stopifnot(typeof(individuals) == typeof(pedigree))
     stopifnot(individuals %in% pedigree)
     stopifnot(geneset %in% 0:2)

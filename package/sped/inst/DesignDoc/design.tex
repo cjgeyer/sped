@@ -20,11 +20,15 @@
 
 \maketitle
 
+\section{Introduction}
+
 Here we design an R package that incorporates some of the functionality
 of a very old (and defunct) S package for statistical genetics described
 by \citet{geyer}.  In particular, our new package will do multigene
 descent probabilities as described originally by \citet{thompson} and
 as implemented by \citet{geyer}.
+
+\section{Pedigrees}
 
 We work relative to a defined pedigree in which every individual has either
 two parents or none specified.  Those with none specified are called
@@ -39,6 +43,8 @@ Any ancestors of individuals not in the pedigree --- including parents
 of founders --- are assumed to not be individuals in the pedigree.
 That is, we are assuming that all unknown individuals are not any known
 individuals.
+
+\section{Descent Probabilities}
 
 \citet{thompson} defines \emph{multigene descent probabilities}
 $g_S(B_1, \ldots, B_n)$ to be the probability that genes
@@ -212,6 +218,55 @@ our \eqref{eq:g-empty} and
 are the boundary
 conditions \citeauthor{thompson} referred to, because \citeauthor{geyer}
 was \citeauthor{thompson}'s research assistant when \citet{geyer} was written.
+
+\section{Special Descent Probabilities}
+
+These come originally from \citet{thompson-1986}.  We follow \citet{geyer}.
+
+\subsection{Gammas}
+
+The fraction of genes in individual $B$ that comes from founder $A$ is
+\begin{equation} \label{eq:gamma}
+   \gamma(A, B) = g_{S_A}(B)
+\end{equation}
+where $S_A$ is the set of genes that contains the two genes of $A$ and no
+other genes.
+
+\subsection{Betas}
+
+If, as before, $F_i$ is the father of $B_i$ and $M_i$ is the mother of $B_i$,
+then
+\begin{equation} \label{eq:beta}
+   \beta(A, B_i) = g_{S_A}(F_i, M_i)
+\end{equation}
+is the bilineal contribution of founder $A$ to individual $B_i$,
+the probability that both genes of $B_i$ are descended from genes
+of founder $A$.
+
+\subsection{Alphas}
+
+Now let $T_A$ be the set of genes that contains one gene of founder $A$ and no
+other genes, and let $F_i$ and $M_i$ be as above, then
+\begin{equation} \label{eq:alpha}
+   \alpha(A, B_i) = 2 g_{T_A}(F_i, M_i)
+\end{equation}
+is the inbreeding of individual $B_i$ relative to founder $A$,
+the probability that both genes of individual $B$ come from the same
+gene in founder $A$.
+
+\subsection{Inbreeding Coefficients}
+
+Then
+\begin{equation} \label{eq:inbreeding}
+   \alpha(B) = \sum_{A \in \text{Founders}} \alpha(A, B)
+\end{equation}
+
+\subsection{Kinship Coefficients}
+
+The kinship coefficient of individuals $B_i$ and $B_j$ is
+\begin{equation} \label{eq:kinship}
+   \phi(B_i, B_j) = 2 \sum_{A \in \text{Founders}} G_{T_A}(B_i, B_j)
+\end{equation}
 
 \begin{thebibliography}{}
 
