@@ -73,4 +73,12 @@ Ancestry of alleles and extinction of genes in populations with defined
 \emph{Zoo Biology}, \bold{5}, 161--170.
 \doi{doi:10.1002/zoo.1430050210}.
 }
+\examples{
+# In alberta pedigree, probability that one gene picked at random
+# from individual 1260 is descended from one gene in founder 52.
+library(sped)
+data(alberta)
+
+descent(1260, alberta, c("52"=1))
+}
 \keyword{misc}
