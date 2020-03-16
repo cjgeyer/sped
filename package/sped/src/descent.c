@@ -17,15 +17,11 @@
 //
 // also argument args is one-origin indexing
 
-static double get_value(SEXP foo);
-
-static SEXP result_and_debug_info(double value, char *type, SEXP args,
-    int ldebug, SEXP names, int ncalls, ...);
+static double my_descent(int nind, int *ipa, int *ima, int *igenes,
+    int nargs, int *iargs);
 
 SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
 {
-    const double half = 1.0 / 2.0;
-
     int nind = LENGTH(pa);
     int nargs = LENGTH(args);
 
@@ -78,7 +74,15 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
             error("genes not 0, 1, or 2");
     }
 
-    // now refer to Theorem 1 in design document (in inst/DesignDoc)
+    return ScalarReal(my_descent(nind, ipa, ima, igenes, nargs, iargs));
+}
+
+static double my_descent(int nind, int *ipa, int *ima, int *igenes,
+    int nargs, int *iargs) {
+
+    const double half = 1.0 / 2.0;
+
+    // refer to Theorem 1 in design document (in inst/DesignDoc)
 
     // sort args
     R_isort(iargs, nargs);
@@ -86,7 +90,7 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
     // case (a), equation (1a)
     // by convention, nargs == 0 implies result = 1.0;
     if (nargs == 0)
-        return result_and_debug_info(1.0, "a", args, ldebug, names, 0);
+        return 1.0;
 
     int b1 = iargs[0];
     int r = 1;
@@ -94,21 +98,14 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
 
     // case (b), equation (1b)
     if ((ipa[b1 - 1] != 0) && (igenes[b1 - 1] == 0) && (r == 1)) {
-        SEXP myargs, foo, bar;
-        PROTECT(myargs = allocVector(INTSXP, nargs));
-        memcpy(INTEGER(myargs), iargs, nargs * sizeof(int));
-        INTEGER(myargs)[0] = ipa[b1 - 1];
-        PROTECT(foo = descent(pa, ma, myargs, genes, debug, names));
-        // need following because descent reorders its 2nd argument (args)
-        memcpy(INTEGER(myargs), iargs, nargs * sizeof(int));
-        INTEGER(myargs)[0] = ima[b1 - 1];
-        PROTECT(bar = descent(pa, ma, myargs, genes, debug, names));
-        double dfoo = get_value(foo);
-        double dbar = get_value(bar);
-        UNPROTECT(3);
-        double dvalue = half * (dfoo + dbar);
-        return result_and_debug_info(dvalue, "b", args, ldebug,
-            names, 2, foo, bar);
+        int *myargs = (int *) R_alloc(nargs, sizeof(int));
+        memcpy(myargs, iargs, nargs * sizeof(int));
+        myargs[0] = ipa[b1 - 1];
+        double dfoo = my_descent(nind, ipa, ima, igenes, nargs, myargs);
+        memcpy(myargs, iargs, nargs * sizeof(int));
+        myargs[0] = ima[b1 - 1];
+        double dbar = my_descent(nind, ipa, ima, igenes, nargs, myargs);
+        return half * (dfoo + dbar);
     }
 
     // case (c), equation (1c)
@@ -116,40 +113,29 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
         double half_r_minus_one = half;
         for (int i = 2; i < r; i++) half_r_minus_one *= half;
         int mynargs = nargs - r + 1;
-        SEXP myargs, foo, bar;
-        PROTECT(myargs = allocVector(INTSXP, mynargs));
-        INTEGER(myargs)[0] = b1;
-        memcpy(INTEGER(myargs) + 1, iargs + r, (nargs - r) * sizeof(int));
-        PROTECT(foo = descent(pa, ma, myargs, genes, debug, names));
+        // allocate one extra item for second call to my_descent
+        int *myargs = (int *) R_alloc(mynargs + 1, sizeof(int));
+        myargs[0] = b1;
+        memcpy(myargs + 1, iargs + r, (nargs - r) * sizeof(int));
+        double dfoo = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
         mynargs += 1;
-        PROTECT(myargs = allocVector(INTSXP, mynargs));
-        INTEGER(myargs)[0] = ipa[b1 - 1];
-        INTEGER(myargs)[1] = ima[b1 - 1];
-        memcpy(INTEGER(myargs) + 2, iargs + r, (nargs - r) * sizeof(int));
-        PROTECT(bar = descent(pa, ma, myargs, genes, debug, names));
-        double dfoo = get_value(foo);
-        double dbar = get_value(bar);
-        UNPROTECT(4);
-        double dvalue = half_r_minus_one * dfoo +
-            (1.0 - half_r_minus_one) * dbar;
-        return result_and_debug_info(dvalue, "c", args, ldebug,
-            names, 2, foo, bar);
+        myargs[0] = ipa[b1 - 1];
+        myargs[1] = ima[b1 - 1];
+        memcpy(myargs + 2, iargs + r, (nargs - r) * sizeof(int));
+        double dbar = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
+        return half_r_minus_one * dfoo + (1.0 - half_r_minus_one) * dbar;
     }
 
     // case (d), equation (1d)
     if ((ipa[b1 - 1] == 0) && (igenes[b1 - 1] == 0))
-        return result_and_debug_info(0.0, "d", args, ldebug, names, 0);
+        return 0.0;
 
     // case (e), equation (1e)
     if (igenes[b1 - 1] == 2) {
         int mynargs = nargs - r;
-        SEXP myargs, foo;
-        PROTECT(myargs = allocVector(INTSXP, mynargs));
-        memcpy(INTEGER(myargs), iargs + r, (nargs - r) * sizeof(int));
-        PROTECT(foo = descent(pa, ma, myargs, genes, debug, names));
-        double dfoo = get_value(foo);
-        UNPROTECT(2);
-        return result_and_debug_info(dfoo, "e", args, ldebug, names, 1, foo);
+        int *myargs = (int *) R_alloc(mynargs, sizeof(int));
+        memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
+        return my_descent(nind, ipa, ima, igenes, mynargs, myargs);
     }
 
     // case (f), equation (1f)
@@ -157,26 +143,18 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
         double half_r = half;
         for (int i = 2; i <= r; i++) half_r *= half;
         int mynargs = nargs - r;
-        SEXP myargs, foo, bar, baz;
-        PROTECT(myargs = allocVector(INTSXP, mynargs));
-        memcpy(INTEGER(myargs), iargs + r, (nargs - r) * sizeof(int));
-        PROTECT(foo = descent(pa, ma, myargs, genes, debug, names));
+        // allocate one extra item for second and third call to my_descent
+        int *myargs = (int *) R_alloc(mynargs + 1, sizeof(int));
+        memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
+        double dfoo = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
         mynargs += 1;
-        PROTECT(myargs = allocVector(INTSXP, mynargs));
-        INTEGER(myargs)[0] = ipa[b1 - 1];
-        memcpy(INTEGER(myargs) + 1, iargs + r, (nargs - r) * sizeof(int));
-        PROTECT(bar = descent(pa, ma, myargs, genes, debug, names));
-        INTEGER(myargs)[0] = ima[b1 - 1];
-        // need following because descent reorders its 2nd argument (args)
-        memcpy(INTEGER(myargs) + 1, iargs + r, (nargs - r) * sizeof(int));
-        PROTECT(baz = descent(pa, ma, myargs, genes, debug, names));
-        double dfoo = get_value(foo);
-        double dbar = get_value(bar);
-        double dbaz = get_value(baz);
-        UNPROTECT(5);
-        double dvalue = half_r * dfoo + half * (1.0 - half_r) * (dbar + dbaz);
-        return result_and_debug_info(dvalue, "f", args, ldebug, names, 3,
-            foo, bar, baz);
+        myargs[0] = ipa[b1 - 1];
+        memcpy(myargs + 1, iargs + r, (nargs - r) * sizeof(int));
+        double dbar = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
+        myargs[0] = ima[b1 - 1];
+        memcpy(myargs + 1, iargs + r, (nargs - r) * sizeof(int));
+        double dbaz = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
+        return half_r * dfoo + half * (1.0 - half_r) * (dbar + dbaz);
     }
 
     // case (g), equation (1g)
@@ -184,83 +162,14 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
         double half_r = half;
         for (int i = 2; i <= r; i++) half_r *= half;
         int mynargs = nargs - r;
-        SEXP myargs, foo;
-        PROTECT(myargs = allocVector(INTSXP, mynargs));
-        memcpy(INTEGER(myargs), iargs + r, (nargs - r) * sizeof(int));
-        PROTECT(foo = descent(pa, ma, myargs, genes, debug, names));
-        double dfoo = get_value(foo);
-        UNPROTECT(2);
-        double dvalue = half_r * dfoo;
-        return result_and_debug_info(dvalue, "g", args, ldebug, names, 1, foo);
+        int *myargs = (int *) R_alloc(mynargs, sizeof(int));
+        memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
+        double dfoo = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
+        return half_r * dfoo;
     }
 
     // should never happen
-#ifdef BLEAT
-    int is_integer_names = isInteger(names);
-    for (int i = 0; i < nargs; i++)
-        if (is_integer_names)
-            REprintf("args[%d] = %d\n", i + 1, INTEGER(names)[iargs[i] - 1]);
-        else
-            REprintf("args[%d] = %s\n", i + 1,
-                CHAR(STRING_ELT(names, iargs[i] - 1)));
-        REprintf("b1 = %s\n", CHAR(STRING_ELT(names, b1 - 1)));
-        REprintf("number of b1 genes in S = %d\n", igenes[b1 - 1]);
-#endif /* BLEAT */
-    error("got to bottom of function without executing"
+    error("got to bottom of function my_descent without executing"
         " previous return statement\n");
 }
 
-static double get_value(SEXP foo)
-{
-    if (isVectorList(foo))
-        foo = VECTOR_ELT(foo, 0);
-    return REAL(foo)[0];
-}
-
-#include <stdarg.h>
-
-static SEXP result_and_debug_info(double value, char *type, SEXP args,
-    int ldebug, SEXP names, int ncalls, ...)
-{
-    if (! ldebug)
-        return ScalarReal(value);
-
-    // otherwise debug
-    SEXP result, resultnames;
-    PROTECT(result = allocVector(VECSXP, 4));
-    PROTECT(resultnames = allocVector(STRSXP, 4));
-    SET_STRING_ELT(resultnames, 0, mkChar("value"));
-    SET_STRING_ELT(resultnames, 1, mkChar("individuals"));
-    SET_STRING_ELT(resultnames, 2, mkChar("type"));
-    SET_STRING_ELT(resultnames, 3, mkChar("calls"));
-    namesgets(result, resultnames);
-    SET_VECTOR_ELT(result, 0, ScalarReal(value));
-    SET_VECTOR_ELT(result, 2, allocVector(STRSXP, 1));
-    SEXP typestring = VECTOR_ELT(result, 2);
-    SET_STRING_ELT(typestring, 0, mkChar(type));
-    int is_integer_names = isInteger(names);
-    int nargs = LENGTH(args);
-    int *iargs = INTEGER(args);
-    if (is_integer_names) {
-        SET_VECTOR_ELT(result, 1, allocVector(INTSXP, nargs));
-        SEXP mynames = VECTOR_ELT(result, 1);
-        for (int i = 0; i < nargs; i++)
-            INTEGER(mynames)[i] = INTEGER(names)[iargs[i] - 1];
-    } else {
-        SET_VECTOR_ELT(result, 1, allocVector(STRSXP, nargs));
-        SEXP mynames = VECTOR_ELT(result, 1);
-        for (int i = 0; i < nargs; i++)
-            SET_STRING_ELT(mynames, i, STRING_ELT(names, iargs[i] - 1));
-    }
-    SET_VECTOR_ELT(result, 3, allocVector(VECSXP, ncalls));
-    SEXP calls = VECTOR_ELT(result, 3);
-    va_list argptr;
-    va_start(argptr, ncalls);
-    for (int i = 0; i < ncalls; i++) {
-        SEXP foo = va_arg(argptr, SEXP);
-        SET_VECTOR_ELT(calls, i, foo);
-    }
-    va_end(argptr);
-    UNPROTECT(2);
-    return result;
-}
