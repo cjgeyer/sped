@@ -1,10 +1,8 @@
 descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
     debug=FALSE) {
-    cat("1: typeof(individuals) =", typeof(individuals), "\n", file = stderr())
     stopifnot(is.character(individuals) || is.numeric(individuals))
     if (is.numeric(individuals))
         storage.mode(individuals) <- "integer"
-    cat("2: typeof(individuals) =", typeof(individuals), "\n", file = stderr())
     if (is.integer(individuals) && any(individuals <= 0))
         stop("individuals, if integer-valued, must be positive-valued")
     stopifnot(is.matrix(pedigree))
@@ -14,8 +12,6 @@ descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
         storage.mode(pedigree) <- "integer"
     if (is.integer(pedigree) && any(pedigree <= 0))
         stop("pedigree, if integer-valued, must be positive-valued")
-    cat("3: typeof(individuals) =", typeof(individuals), "\n", file = stderr())
-    cat("3: typeof(pedigree) =", typeof(pedigree), "\n", file = stderr())
     stopifnot(typeof(individuals) == typeof(pedigree))
     stopifnot(individuals %in% pedigree)
     stopifnot(geneset %in% 0:2)
@@ -33,7 +29,7 @@ descent <- function(individuals, pedigree, geneset, check.sex=FALSE,
     if (check.sex) {
         foo <- intersect(pedigree[,2], pedigree[,3])
         bar <- paste(foo, collapse = ", ")
-        baz <- paste("individuals", bar, "are both father and mother")
+        baz <- paste("individual(s)", bar, "is/are both father and mother")
         stop(baz)
     }
 
