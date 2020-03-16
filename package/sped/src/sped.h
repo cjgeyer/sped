@@ -5,7 +5,7 @@
 #include <R.h>
 #include <Rinternals.h>
 
-SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names);
+SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes);
 
 #endif /* SPED_SPED_H */
 

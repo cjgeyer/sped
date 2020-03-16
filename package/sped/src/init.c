@@ -7,7 +7,7 @@
 #include "sped.h"
 
 static R_CallMethodDef callMethods[]  = {
-    {"descent", (DL_FUNC) &descent, 6},
+    {"descent", (DL_FUNC) &descent, 4},
     {NULL, NULL, 0}
 };
 

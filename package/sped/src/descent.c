@@ -20,19 +20,13 @@
 static double my_descent(int nind, int *ipa, int *ima, int *igenes,
     int nargs, int *iargs);
 
-SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
+SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes)
 {
     int nind = LENGTH(pa);
     int nargs = LENGTH(args);
 
     if (nind < 1)
         error("number of individuals in pedigree must be at least one");
-
-    if (! isLogical(debug))
-        error("argument debug must be type logical");
-    if (LENGTH(debug) != 1)
-        error("argument debug must have length 1");
-    int ldebug = LOGICAL(debug)[0];
 
     if (! isInteger(pa))
         error("argument pa must be type integer");
@@ -42,8 +36,6 @@ SEXP descent(SEXP pa, SEXP ma, SEXP args, SEXP genes, SEXP debug, SEXP names)
         error("argument args must be type integer");
     if (! isInteger(genes))
         error("argument genes must be type integer");
-    if (! (isString(names) || isInteger(names)))
-        error("argument names must character or integer");
 
     if (LENGTH(ma) != nind)
         error("arguments pa and ma must have same length");
