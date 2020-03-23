@@ -24,3 +24,7 @@ for (i in 1:nrow(bar))
 
 all.equal(foo, bar)
 
+qux <- kinship(c("U", "V", "Q", "R", "W"), thompson)
+idx <- match(rownames(qux), rownames(foo))
+all.equal(foo[idx, idx], qux)
+

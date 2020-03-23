@@ -43,7 +43,12 @@ Type 'q()' to quit R.
 > all.equal(foo, bar)
 [1] TRUE
 > 
+> qux <- kinship(c("U", "V", "Q", "R", "W"), thompson)
+> idx <- match(rownames(qux), rownames(foo))
+> all.equal(foo[idx, idx], qux)
+[1] TRUE
+> 
 > 
 > proc.time()
    user  system elapsed 
-  0.438   0.041   0.470 
+  0.621   0.032   0.640 

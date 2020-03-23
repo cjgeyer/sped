@@ -32,6 +32,6 @@ kinship <- function(individuals, pedigree) {
 
     kout <- .Call(C_kinship, pa = pa, ma = ma)
     dimnames(kout) <- list(foo, foo)
-    kout
+    kout[foo %in% individuals, foo %in% individuals]
 }
 
