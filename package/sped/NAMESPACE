@@ -6,6 +6,7 @@ export(gammas)
 export(betas)
 export(alphas)
 export(inbreeding)
+export(kinship)
 
 importFrom(pooh, tsort)
 

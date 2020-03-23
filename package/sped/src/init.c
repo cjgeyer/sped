@@ -8,6 +8,7 @@
 
 static R_CallMethodDef callMethods[]  = {
     {"descent", (DL_FUNC) &descent, 4},
+    {"kinship", (DL_FUNC) &kinship, 2},
     {NULL, NULL, 0}
 };
 

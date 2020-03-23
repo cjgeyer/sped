@@ -74,6 +74,8 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
 
     const double half = 1.0 / 2.0;
 
+    R_CheckUserInterrupt();
+
     // refer to Theorem 1 in design document (in inst/DesignDoc)
 
     // sort args

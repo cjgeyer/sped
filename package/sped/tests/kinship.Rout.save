@@ -1,0 +1,49 @@
+
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> library(sped)
+> library(pooh)
+> data(thompson)
+> 
+> individuals <- sort(unique(thompson))
+> foo <- kinship(individuals, thompson)
+> individuals.too <- rownames(foo)
+> setequal(individuals, individuals.too)
+[1] TRUE
+> 
+> founders <- setdiff(individuals, thompson[ , "ind"])
+> 
+> bar <- foo
+> for (i in 1:nrow(bar))
++     for (j in 1:ncol(bar)) {
++         baz <- double(length(founders))
++         for (k in seq(along = founders)) {
++             g <- 1
++             names(g) <- founders[k]
++             baz[k] <- descent(individuals.too[c(i, j)], thompson, g)
++         }
++         bar[i, j] <- bar[j, i] <- 2 * sum(baz)
++     }
+> 
+> all.equal(foo, bar)
+[1] TRUE
+> 
+> 
+> proc.time()
+   user  system elapsed 
+  0.438   0.041   0.470 

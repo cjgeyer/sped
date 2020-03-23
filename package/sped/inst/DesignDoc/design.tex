@@ -268,6 +268,24 @@ The kinship coefficient of individuals $B_i$ and $B_j$ is
    \phi(B_i, B_j) = 2 \sum_{A \in \text{Founders}} g_{T_A}(B_i, B_j)
 \end{equation}
 
+This is not an efficient way to calculate kinship coefficients,
+also called coancestry coefficients \citep[pp.135 and 763]{lynch-walsh}.
+They give the following recursive equations and boundary conditions.
+If $B_i$ is not a founder, then
+\begin{subequations}
+\begin{equation} \label{eq:kinship-diag}
+   \phi(B_i, B_i) = \frac{1 + \phi(F_i, M_i)}{2}
+\end{equation}
+and if $B_i$ is not a founder and not an ancestor of $B_j$
+\begin{equation} \label{eq:kinship-off-diag}
+   \phi(B_i, B_j) = \frac{\phi(F_i, B_j) + \phi(M_i, B_j)}{2}
+\end{equation}
+and if $B_i$ is a founder
+\begin{equation} \label{eq:kinship-diag-founder}
+   \phi(B_i, B_i) = 1.
+\end{equation}
+\end{subequations}
+
 \begin{thebibliography}{}
 
 \bibitem[Aho, et al.(1983)Aho, Hopcroft, and Ullman]{aho-et-al}
@@ -287,6 +305,11 @@ Geyer, C.~J. (1988).
 Geyer, C.~J. (2017).
 \newblock R package \texttt{pooh} (Partial Orders and Relations), version 0.3-2.
 \newblock \url{http://cran.r-project.org/package=pooh}.
+
+\bibitem[Lynch and Walsh(1998)]{lynch-walsh}
+Lynch, M., and Walsh, B. (1998).
+\newblock \emph{Genetics and Analysis of Quantitative Traits}.
+\newblock Sinauer Associates, Sunderland, MA.
 
 \bibitem[Thompson(1983)]{thompson}
 Thompson, E.~A. (1983).

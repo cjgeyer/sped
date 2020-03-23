@@ -4,6 +4,7 @@
 \alias{betas}
 \alias{gammas}
 \alias{inbreeding}
+\alias{kinship}
 \title{Special Multigene Descent Probabilities}
 \concept{genetics}
 \description{
@@ -55,6 +56,9 @@ to the founder: the probability that both genes
 from the individual comes from the same gene (either gene) of the founder.
 
 R function \code{inbreeding} gives inbreeding coefficients of the individuals.
+
+R function \code{kinship} returns a matrix whose entries are the kinship
+coefficients of the individuals.
 }
 \references{
 Geyer, C.~J. (1988)
@@ -89,5 +93,6 @@ data(thompson)
 betas(c("U", "V", "Q", "R", "W"), thompson)
 alphas(c("U", "V", "Q", "R", "W"), thompson)
 inbreeding(c("U", "V", "Q", "R", "W"), thompson)
+kinship(c("U", "V", "Q", "R", "W"), thompson)
 }
 \keyword{misc}
