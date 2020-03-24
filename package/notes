@@ -1,5 +1,5 @@
 # to add extra compiler warnings
-# note that file myMakevars must be a copy of aster/src/Makevars
+# note that file myMakevars must be a copy of sped/src/Makevars
 #     with extra stuff added
 export R_MAKEVARS_USER=`pwd`/myMakevars
 
@@ -8,3 +8,19 @@ rm -f sped_*.tar.gz
 
 R CMD build sped
 R CMD check sped_*.tar.gz
+
+# do at least once before shipping
+# both sped.Rcheck/sped-Ex.Rout and sped.Rcheck/tests/*.Rout
+#     should have no complaints from valgrind
+#     but we have to suppress some complaints about the C standard library
+export VALGRIND_OPTS=--suppressions=`pwd`/myValgrind.supp
+R CMD check sped_*.tar.gz --use-valgrind
+grep "ERROR SUMMARY" sped.Rcheck/00check.log
+grep "ERROR SUMMARY" sped.Rcheck/sped-Ex.Rout
+grep "definitely lost:" sped.Rcheck/00check.log
+grep "definitely lost:" sped.Rcheck/sped-Ex.Rout
+
+# alternatively, to get valgrind to produce suppression specifications
+export VALGRIND_OPTS="--error-limit=no --gen-suppressions=all --log-file=minimalraw.log"
+# and then run R CMD check --use-valgrind and then look in the 2 files
+# name minimalraw.log that are put in sped.Rcheck for suppressions
