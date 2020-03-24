@@ -5,3 +5,6 @@
 *.Rcheck
 *.tar.gz
 *.Rout
+*.out
+sped.tex
+*.bak

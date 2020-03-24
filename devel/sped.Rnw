@@ -1,0 +1,367 @@
+
+\documentclass{article}
+
+% \usepackage{amscd}
+% \usepackage[tableposition=top]{caption}
+% \usepackage[colorlinks=true]{hyperref}
+% \usepackage{ifthen}
+% \usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{indentfirst}
+\usepackage{natbib}
+\usepackage{url}
+
+\newcommand{\code}[1]{\texttt{#1}}
+
+\newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
+\newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
+
+\begin{document}
+
+\title{Vignette for R Package Sped}
+\author{Charles J. Geyer \and Elizabeth A. Thompson}
+\maketitle
+
+<<options,include=FALSE,echo=FALSE>>=
+options(keep.source = TRUE, width = 60)
+@
+
+\section{R}
+
+<<library>>=
+library(sped, lib.loc = "../package/sped.Rcheck/")
+@
+
+\begin{itemize}
+\item The version of R used to make this document is \Sexpr{getRversion()}.
+\item The version of the \texttt{sped} package used to make this document is
+    \Sexpr{packageVersion("sped")}.
+\end{itemize}
+
+\section{History}
+
+R package \code{sped} is a re-implementation of some of the functionality
+of an S package of the same name for old S
+\citep{becker-chambers,becker-chambers-extending}.
+That old S package, described in \citet{geyer}, was obsolete almost as
+soon as it was created because S version 2 \citep{becker-chambers-wilks}
+came along and broke all extension packages like \code{sped}.
+
+Although we have the code for the old \code{sped} package, there is no
+point to trying to port it to S or R because the extension interface to
+old S was so crazy, that it is much easier to rewrite the package than
+to port it.
+
+We took \citet{thompson,thompson-1986} and \citet{geyer} as definitions
+of what we had to re-implement.  For details see the design document,
+which can be found in the \code{DesignDoc} directory of any installation
+of the \code{sped} package.
+
+\section{Pedigrees}
+
+We work relative to a pedigree in which every individual has either
+two parents or none specified.  Those with parents unspecified are called
+\emph{founders}.  A pedigree may be specified by a \emph{triplets matrix}
+having three columns and each row gives the names of a non-founder individual,
+its father, and its mother, in that order.  We check that no individual is
+its own ancestor.  Optionally, we check that sexes are consistent
+(no individual is both father and mother).  This check is optional
+so that we can deal with hermaphroditic organisms.
+
+Any ancestors of individuals in the pedigree that are outside the pedigree,
+parents of founders, grandparents of founders, great-grandparents of founders,
+and so forth, are assumed to not be individuals in the pedigree.
+That is, we are assuming that known individuals and unknown individuals
+are disjoint sets.
+
+\section{Multigene Descent Probabilities}
+
+At each autosomal locus of the genome there are two genes, one
+inherited from the father and one inherited from the mother.
+\citet{thompson} defines \emph{multigene descent probabilities}
+$g_S(B_1, \ldots, B_n)$ to be the probability that one gene
+randomly chosen from the two genes at a particular autosomal
+locus for each of the individuals $B_1$, $\ldots,$ $B_n$
+are all descended from genes (not necessarily the same gene)
+in some set $S$ of genes in individuals in the pedigree.
+The individuals $B_1$, $\ldots,$ $B_n$ need not be distinct.
+The set $S$ can be specified by giving for each individual in the pedigree
+an integer 0, 1, or 2 that says how many of its genes (at the autosomal locus
+in question) are in the set $S$.
+
+Multigene descent probabilities have many interesting applications
+\citep{thompson,thompson-1986}.  Here we just look at some examples
+taken from \citet{geyer}.
+
+<<ex-one>>=
+data(alberta)
+head(alberta)
+descent(1260, alberta, c("52"=1))
+@
+The \code{alberta} pedigree, included in the package,
+is of individuals of the species \emph{Equus przewalskii},
+common names Asian wild horse, Mongolian wild horse, and
+Przewalski's horse, who are individuals living in Alberta, Canada in 1988,
+and their known ancestors.  The ``names'' of individuals in the pedigree
+are just numbers, their numbers in the \emph{E. przewalskii} studbook.
+
+Here $B_1$, $\ldots,$ $B_n$ are just the one individual 1260.  The set $S$
+has just one gene in individual 52 (a founder).  We have to quote {52} in
+the call of R function \code{descent} because we are making it the name
+of an element of the vector \code{c("52"=1)} that specifies the set $S$.
+We only need to specify individuals that have genes in $S$.
+Other individuals are assumed to have zero genes in $S$.
+
+Here is a more complicated example.
+<<ex-two>>=
+descent(c(1085, 1094, 1180, 1260), alberta, c("52"=1))
+@
+This is the probability that one gene (as a specified autosomal locus)
+drawn at random from each of the four individuals
+1085, 1094, 1180, and 1260 are all descended from one gene in individual 52.
+
+The old S package had a ``feature'' that when the first argument of this
+function was a ``column vector'' then it calculated something else.
+This was probably bad user interface design (tricky nonsense).
+We can use R function \code{Vectorize} to easily obtain this functionality
+when wanted.
+<<ex-three>>=
+vescent <- Vectorize(descent, vectorize.args = "individuals")
+b <- c(1085, 1094, 1180, 1260)
+names(b) <- b
+vescent(b, alberta, c("52"=1))
+@
+We gave the first argument to \code{vescent} names (with \code{names(b) <- b})
+so that the output would also have names.
+
+\section{Alphas, Betas, and Gammas}
+
+The Greek letters in the section title refer to particular multigene descent
+probabilities that are useful in particular applications \citet{thompson-1986}.
+
+The fraction of genes (at the autosomal locus in question)
+in individual $B$ that comes from founder $A$ is
+\begin{equation*}
+   \gamma(A, B) = g_{S_A}(B)
+\end{equation*}
+where $S_A$ is the set of genes that contains the two genes of $A$
+(at the autosomal locus in question) and no other genes.
+
+Here is an example.
+<<ex-gamma>>=
+data(thompson)
+gammas(c("U", "V", "Q", "R", "W"), thompson)
+@
+This function gives the gamma for each individual in its first argument
+and each founder in the pedigree.  The founders are the row names of
+the result (which is a matrix).
+
+If individual $B$ has father $F$ and mother $M$ (in the given pedigree),
+then
+\begin{equation*}
+   \beta(A, B) = g_{S_A}(F, M)
+\end{equation*}
+is the bilineal contribution of founder $A$ to individual $B$,
+the probability that both genes of $B$ are descended from genes
+of founder $A$.
+
+Here is an example of that.
+<<ex-beta>>=
+foo <- betas(c("U", "V", "Q", "R", "W"), thompson)
+foo
+@
+The output matrix has the same form as for gammas
+<<ex-beta-too>>=
+foo["B", "Q"]
+@
+is the bilineal contribution of founder $B$ to individual $Q$.
+
+Now let $T_A$ be the set of genes that contains one gene of founder $A$ and no
+other genes, and let $F$ and $M$ be as above, then
+\begin{equation*}
+   \alpha(A, B) = 2 g_{T_A}(F, M)
+\end{equation*}
+is the inbreeding of individual $B$ relative to founder $A$,
+the probability that both genes of individual $B$ come from the same
+gene in founder $A$.
+
+Here is an example of that.
+<<ex-alpha>>=
+foo <- alphas(c("U", "V", "Q", "R", "W"), thompson)
+foo
+@
+
+\section{Inbreeding Coefficients}
+
+When the alphas are summed over all founders
+\begin{equation*}
+   \alpha(B) = \sum_{A \in \text{Founders}} \alpha(A, B)
+\end{equation*}
+this gives the \emph{inbreeding coefficients} of the individuals.
+
+Here is an example of that.
+<<ex-inbreeding>>=
+colSums(foo)
+@
+
+Because this is a widely used concept, we give it its own function
+<<ex-inbreeding-too>>=
+inbreeding(c("U", "V", "Q", "R", "W"), thompson)
+@
+(this does exactly the same thing as the preceding example, it just
+does it in one step).
+
+\section{Kinship Coefficients}
+
+The \emph{kinship coefficient} of individuals $B_i$ and $B_j$ is
+\begin{equation*}
+   \phi(B_i, B_j) = 2 \sum_{A \in \text{Founders}} g_{T_A}(B_i, B_j)
+\end{equation*}
+
+Here is an example of that.
+<<ex-kinship>>=
+foo <- kinship(c("U", "V", "Q", "R", "W"), thompson)
+foo
+@
+Here
+<<ex-kinship-too>>=
+foo["Q", "R"]
+@
+gives the kinship coefficient of individuals Q and R.  And
+<<ex-kinship-too-too>>=
+foo["Q", "Q"]
+@
+gives the kinship coefficient of individual Q with itself.
+Every non-inbred individual has kinship coefficient $1/2$ with itself.
+
+These individuals are inbred.
+<<ex-inbreeding-queue>>=
+inbreeding("Q", thompson)
+@
+so their kinship coefficients with themselves are greater than $1/2$.
+
+\section{Numerator Relationship Matrix}
+
+When we find the matrix of kinship coefficients of all individuals
+and multiply by two, this is called the \emph{numerator relationship matrix}.
+It has an important use in quantitative genetics, but we won't explain
+that here.
+<<numerator-relationship-matrix>>=
+foo <- 2 * kinship(unique(thompson), thompson)
+@
+
+\begin{thebibliography}{}
+
+\bibitem[Becker and Chambers(1984)]{becker-chambers}
+Becker, R.~A., and Chambers, J.~M. (1984).
+\newblock \emph{S : An Interactive Environment for Data Analysis and Graphics}.
+\newblock Wadsworth, Belmont, CA.
+
+\bibitem[Becker and Chambers(1985)]{becker-chambers-extending}
+Becker, R.~A., and Chambers, J.~M. (1985).
+\newblock \emph{Extending the S System}.
+\newblock Wadsworth, Monterey, CA.
+
+\bibitem[Becker, et al.(1988)Becker, Chambers, and Wilks]{becker-chambers-wilks}
+Becker, R.~A., Chambers, J.~M., and Wilks, A.~R. (1988).
+\newblock \emph{The New S Language: A Programming Environment for Data Analysis
+    and Graphics}.
+\newblock Wadsworth \& Brooks/Cole, Pacific Grove, CA.
+
+\bibitem[Geyer(1988)]{geyer}
+Geyer, C.~J. (1988).
+\newblock Software for Calculating Gene Survival and Multigene Descent
+    Probabilities and for Pedigree Manipulation and Drawing.
+\newblock Technical Report No.~153, Department of Statistics,
+    University of Washington.
+\newblock \url{https://www.stat.washington.edu/article/tech-report/software-calculating-gene-survival-and-multigene-descent-probabilities-and}
+
+\bibitem[Thompson(1983)]{thompson}
+Thompson, E.~A. (1983).
+\newblock Gene extinction and allelic origins in complex genealogies
+    (with discussion).
+\newblock \emph{Proceedings of the Royal Society of London. Series B,
+    Biological Sciences}, \textbf{219}, 241--251.
+\newblock \url{https://doi.org/10.1098/rspb.1983.0072}.
+
+\bibitem[Thompson(1986)]{thompson-1986}
+Thompson, E.~A. (1986).
+\newblock Ancestry of alleles and extinction of genes in populations with
+    defined pedigrees.
+\newblock \emph{Zoo Biology}, \textbf{5}, 161--170.
+\newblock \url{https://doi.org/10.1002/zoo.1430050210}.
+
+\end{thebibliography}
+
+\end{document}
+
+\end{document}
+
+
+\section{Special Descent Probabilities}
+
+These come originally from \citet{thompson-1986}.  We follow \citet{geyer}.
+
+\subsection{Gammas}
+
+The fraction of genes in individual $B$ that comes from founder $A$ is
+\begin{equation} \label{eq:gamma}
+   \gamma(A, B) = g_{S_A}(B)
+\end{equation}
+where $S_A$ is the set of genes that contains the two genes of $A$ and no
+other genes.
+
+\subsection{Betas}
+
+If, as before, $F_i$ is the father of $B_i$ and $M_i$ is the mother of $B_i$,
+then
+\begin{equation} \label{eq:beta}
+   \beta(A, B_i) = g_{S_A}(F_i, M_i)
+\end{equation}
+is the bilineal contribution of founder $A$ to individual $B_i$,
+the probability that both genes of $B_i$ are descended from genes
+of founder $A$.
+
+\subsection{Alphas}
+
+Now let $T_A$ be the set of genes that contains one gene of founder $A$ and no
+other genes, and let $F_i$ and $M_i$ be as above, then
+\begin{equation} \label{eq:alpha}
+   \alpha(A, B_i) = 2 g_{T_A}(F_i, M_i)
+\end{equation}
+is the inbreeding of individual $B_i$ relative to founder $A$,
+the probability that both genes of individual $B$ come from the same
+gene in founder $A$.
+
+\subsection{Inbreeding Coefficients}
+
+Then
+\begin{equation} \label{eq:inbreeding}
+   \alpha(B) = \sum_{A \in \text{Founders}} \alpha(A, B)
+\end{equation}
+
+\subsection{Kinship Coefficients}
+
+The kinship coefficient of individuals $B_i$ and $B_j$ is
+\begin{equation} \label{eq:kinship}
+   \phi(B_i, B_j) = 2 \sum_{A \in \text{Founders}} g_{T_A}(B_i, B_j)
+\end{equation}
+
+This is not an efficient way to calculate kinship coefficients,
+also called coancestry coefficients \citep[pp.135 and 763]{lynch-walsh}.
+They give the following recursive equations and boundary conditions.
+If $B_i$ is not a founder, then
+\begin{subequations}
+\begin{equation} \label{eq:kinship-diag}
+   \phi(B_i, B_i) = \frac{1 + \phi(F_i, M_i)}{2}
+\end{equation}
+and if $B_i$ is not a founder and not an ancestor of $B_j$
+\begin{equation} \label{eq:kinship-off-diag}
+   \phi(B_i, B_j) = \frac{\phi(F_i, B_j) + \phi(M_i, B_j)}{2}
+\end{equation}
+and if $B_i$ is a founder
+\begin{equation} \label{eq:kinship-diag-founder}
+   \phi(B_i, B_i) = 1.
+\end{equation}
+\end{subequations}
+
