@@ -16,6 +16,13 @@
 \newcommand{\REVISED}{\begin{center} \LARGE REVISED DOWN TO HERE \end{center}}
 \newcommand{\MOVED}[1][equation]{\begin{center} [#1 moved] \end{center}}
 
+%\VignetteIndexEntry{Package Vignette}
+%\VignetteKeyword{multigene descent probability}
+%\VignetteKeyword{kinship coefficient}
+%\VignetteKeyword{inbreeding coefficient}
+%\VignetteKeyword{genetics}
+%\VignetteKeyword{pedigree}
+
 \begin{document}
 
 \title{Vignette for R Package Sped}
@@ -29,7 +36,7 @@ options(keep.source = TRUE, width = 60)
 \section{R}
 
 <<library>>=
-library(sped, lib.loc = "../package/sped.Rcheck/")
+library(sped)
 @
 
 \begin{itemize}
@@ -294,74 +301,4 @@ Thompson, E.~A. (1986).
 \end{thebibliography}
 
 \end{document}
-
-\end{document}
-
-
-\section{Special Descent Probabilities}
-
-These come originally from \citet{thompson-1986}.  We follow \citet{geyer}.
-
-\subsection{Gammas}
-
-The fraction of genes in individual $B$ that comes from founder $A$ is
-\begin{equation} \label{eq:gamma}
-   \gamma(A, B) = g_{S_A}(B)
-\end{equation}
-where $S_A$ is the set of genes that contains the two genes of $A$ and no
-other genes.
-
-\subsection{Betas}
-
-If, as before, $F_i$ is the father of $B_i$ and $M_i$ is the mother of $B_i$,
-then
-\begin{equation} \label{eq:beta}
-   \beta(A, B_i) = g_{S_A}(F_i, M_i)
-\end{equation}
-is the bilineal contribution of founder $A$ to individual $B_i$,
-the probability that both genes of $B_i$ are descended from genes
-of founder $A$.
-
-\subsection{Alphas}
-
-Now let $T_A$ be the set of genes that contains one gene of founder $A$ and no
-other genes, and let $F_i$ and $M_i$ be as above, then
-\begin{equation} \label{eq:alpha}
-   \alpha(A, B_i) = 2 g_{T_A}(F_i, M_i)
-\end{equation}
-is the inbreeding of individual $B_i$ relative to founder $A$,
-the probability that both genes of individual $B$ come from the same
-gene in founder $A$.
-
-\subsection{Inbreeding Coefficients}
-
-Then
-\begin{equation} \label{eq:inbreeding}
-   \alpha(B) = \sum_{A \in \text{Founders}} \alpha(A, B)
-\end{equation}
-
-\subsection{Kinship Coefficients}
-
-The kinship coefficient of individuals $B_i$ and $B_j$ is
-\begin{equation} \label{eq:kinship}
-   \phi(B_i, B_j) = 2 \sum_{A \in \text{Founders}} g_{T_A}(B_i, B_j)
-\end{equation}
-
-This is not an efficient way to calculate kinship coefficients,
-also called coancestry coefficients \citep[pp.135 and 763]{lynch-walsh}.
-They give the following recursive equations and boundary conditions.
-If $B_i$ is not a founder, then
-\begin{subequations}
-\begin{equation} \label{eq:kinship-diag}
-   \phi(B_i, B_i) = \frac{1 + \phi(F_i, M_i)}{2}
-\end{equation}
-and if $B_i$ is not a founder and not an ancestor of $B_j$
-\begin{equation} \label{eq:kinship-off-diag}
-   \phi(B_i, B_j) = \frac{\phi(F_i, B_j) + \phi(M_i, B_j)}{2}
-\end{equation}
-and if $B_i$ is a founder
-\begin{equation} \label{eq:kinship-diag-founder}
-   \phi(B_i, B_i) = 1.
-\end{equation}
-\end{subequations}
 
