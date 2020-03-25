@@ -1,7 +1,7 @@
 Package: sped
-Version: 0.2
+Version: 0.2-1
 Date: 2020-03-25
-Title: Multi-gene Descent Probabilities
+Title: Multi-Gene Descent Probabilities
 Author: Charles J. Geyer <charlie@stat.umn.edu> and Elizabeth A. Thompson
     <eathomp@u.washington.edu>
 Maintainer: Charles J. Geyer <charlie@stat.umn.edu>

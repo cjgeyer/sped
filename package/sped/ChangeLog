@@ -1,2 +1,4 @@
 0.2     use C variable-length arrays instead of R_alloc
         R_alloc blew out available memory on win-builder.r-project.org
+
+0.2-1   Multi-gene in DESCRIPTION file to "Multi-Gene".  Oof!
