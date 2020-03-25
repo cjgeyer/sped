@@ -11,7 +11,6 @@ data(alberta)
 # from one gene in founder 52.
 # TR says 0.0156250, 0.0156250, 0.0078125, 0.0312500, 0.0078125
 
-
 vescent <- Vectorize(descent, vectorize.args = "individuals")
 foo <- vescent(c(1085, 1094, 1180, 1260, 1272), alberta, c("52"=1))
 all(all.equal(foo, c(0.0156250, 0.0156250, 0.0078125, 0.0312500, 0.0078125)))

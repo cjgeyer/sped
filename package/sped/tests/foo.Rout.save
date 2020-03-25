@@ -37,12 +37,10 @@ Type 'q()' to quit R.
 > # TR says 1.91927e-5
 > 
 > foo <- descent(c(1085, 1094, 1180, 1260, 1272), alberta, c("52"=1))
-> foo
-[1] 1.91927e-05
 > all.equal(foo, 1.91927e-5, tol = 1e-4)
 [1] TRUE
 > 
 > 
 > proc.time()
    user  system elapsed 
- 89.192   0.111  89.295 
+  6.168   0.025   6.185 

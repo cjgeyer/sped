@@ -92,7 +92,8 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
 
     // case (b), equation (1b)
     if ((ipa[b1 - 1] != 0) && (igenes[b1 - 1] == 0) && (r == 1)) {
-        int *myargs = (int *) R_alloc(nargs, sizeof(int));
+        // use variable-length array so freed automatically on user interrupt
+        int myargs[nargs];
         memcpy(myargs, iargs, nargs * sizeof(int));
         myargs[0] = ipa[b1 - 1];
         double dfoo = my_descent(nind, ipa, ima, igenes, nargs, myargs);
@@ -107,8 +108,9 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
         double half_r_minus_one = half;
         for (int i = 2; i < r; i++) half_r_minus_one *= half;
         int mynargs = nargs - r + 1;
+        // use variable-length array so freed automatically on user interrupt
         // allocate one extra item for second call to my_descent
-        int *myargs = (int *) R_alloc(mynargs + 1, sizeof(int));
+        int myargs[mynargs + 1];
         myargs[0] = b1;
         memcpy(myargs + 1, iargs + r, (nargs - r) * sizeof(int));
         double dfoo = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
@@ -127,7 +129,8 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
     // case (e), equation (1e)
     if (igenes[b1 - 1] == 2) {
         int mynargs = nargs - r;
-        int *myargs = (int *) R_alloc(mynargs, sizeof(int));
+        // use variable-length array so freed automatically on user interrupt
+        int myargs[mynargs];
         memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
         return my_descent(nind, ipa, ima, igenes, mynargs, myargs);
     }
@@ -137,8 +140,9 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
         double half_r = half;
         for (int i = 2; i <= r; i++) half_r *= half;
         int mynargs = nargs - r;
+        // use variable-length array so freed automatically on user interrupt
         // allocate one extra item for second and third call to my_descent
-        int *myargs = (int *) R_alloc(mynargs + 1, sizeof(int));
+        int myargs[mynargs + 1];
         memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
         double dfoo = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
         mynargs += 1;
@@ -156,7 +160,8 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
         double half_r = half;
         for (int i = 2; i <= r; i++) half_r *= half;
         int mynargs = nargs - r;
-        int *myargs = (int *) R_alloc(mynargs, sizeof(int));
+        // use variable-length array so freed automatically on user interrupt
+        int myargs[mynargs];
         memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
         double dfoo = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
         return half_r * dfoo;

@@ -19,6 +19,5 @@ all.equal(foo, 0.03125)
 # TR says 1.91927e-5
 
 foo <- descent(c(1085, 1094, 1180, 1260, 1272), alberta, c("52"=1))
-foo
 all.equal(foo, 1.91927e-5, tol = 1e-4)
 

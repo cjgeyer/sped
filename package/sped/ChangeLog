@@ -1,0 +1,2 @@
+0.2     use C variable-length arrays instead of R_alloc
+        R_alloc blew out available memory on win-builder.r-project.org
