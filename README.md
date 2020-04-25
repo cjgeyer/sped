@@ -10,3 +10,5 @@ To install, use your favorite method of installing from github, for example
 
     library("remotes")
     install_github("https://github.com/cjgeyer/sped", subdir = "package/sped")
+
+Now on CRAN https://cran.r-project.org/package=sped
