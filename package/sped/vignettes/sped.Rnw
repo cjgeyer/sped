@@ -123,7 +123,7 @@ Here is a more complicated example.
 <<ex-two>>=
 descent(c(1085, 1094, 1180, 1260), alberta, c("52"=1))
 @
-This is the probability that one gene (as a specified autosomal locus)
+This is the probability that one gene (at a specified autosomal locus)
 drawn at random from each of the four individuals
 1085, 1094, 1180, and 1260 are all descended from one gene in individual 52.
 
@@ -154,6 +154,7 @@ in individual $B$ that comes from founder $A$ is
 where $S_A$ is the set of genes that contains the two genes of $A$
 (at the autosomal locus in question) and no other genes.
 
+\pagebreak[3]
 Here is an example.
 <<ex-gamma>>=
 data(thompson)
@@ -172,6 +173,7 @@ is the bilineal contribution of founder $A$ to individual $B$,
 the probability that both genes of $B$ are descended from genes
 of founder $A$.
 
+\pagebreak[3]
 Here is an example of that.
 <<ex-beta>>=
 foo <- betas(c("U", "V", "Q", "R", "W"), thompson)
@@ -192,6 +194,7 @@ is the inbreeding of individual $B$ relative to founder $A$,
 the probability that both genes of individual $B$ come from the same
 gene in founder $A$.
 
+\pagebreak[3]
 Here is an example of that.
 <<ex-alpha>>=
 foo <- alphas(c("U", "V", "Q", "R", "W"), thompson)
@@ -206,6 +209,7 @@ When the alphas are summed over all founders
 \end{equation*}
 this gives the \emph{inbreeding coefficients} of the individuals.
 
+\pagebreak[3]
 Here is an example of that.
 <<ex-inbreeding>>=
 colSums(foo)
@@ -225,6 +229,7 @@ The \emph{kinship coefficient} of individuals $B_i$ and $B_j$ is
    \phi(B_i, B_j) = 2 \sum_{A \in \text{Founders}} g_{T_A}(B_i, B_j)
 \end{equation*}
 
+\pagebreak[3]
 Here is an example of that.
 <<ex-kinship>>=
 foo <- kinship(c("U", "V", "Q", "R", "W"), thompson)
@@ -241,6 +246,7 @@ foo["Q", "Q"]
 gives the kinship coefficient of individual Q with itself.
 Every non-inbred individual has kinship coefficient $1/2$ with itself.
 
+\pagebreak[3]
 These individuals are inbred.
 <<ex-inbreeding-queue>>=
 inbreeding("Q", thompson)
@@ -281,7 +287,7 @@ Geyer, C.~J. (1988).
     Probabilities and for Pedigree Manipulation and Drawing.
 \newblock Technical Report No.~153, Department of Statistics,
     University of Washington.
-\newblock \url{https://www.stat.washington.edu/article/tech-report/software-calculating-gene-survival-and-multigene-descent-probabilities-and}
+\newblock \url{https://www.stat.washington.edu/article/tech-report/software-calculating-gene-survival-and-multigene-descent-probabilities-and}.
 
 \bibitem[Thompson(1983)]{thompson}
 Thompson, E.~A. (1983).
