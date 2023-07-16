@@ -46,7 +46,7 @@ Software for calculating gene survival and multigene descent
     probabilities and for pedigree manipulation and drawing.
 Technical Report No. 153, Department of Statistics,
     University of Washington.
-\url{https://www.stat.washington.edu/article/tech-report/software-calculating-gene-survival-and-multigene-descent-probabilities-and}.
+\url{https://stat.uw.edu/sites/default/files/files/reports/1988/tr153.pdf}.
 
 Thompson, E. A. (1983)
 Gene extinction and allelic origins in complex genealogies (with discussion).

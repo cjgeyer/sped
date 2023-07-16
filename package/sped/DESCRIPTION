@@ -1,11 +1,11 @@
 Package: sped
-Version: 0.2-1
-Date: 2020-03-25
+Version: 0.3
+Date: 2023-06-15
 Title: Multi-Gene Descent Probabilities
 Author: Charles J. Geyer <charlie@stat.umn.edu> and Elizabeth A. Thompson
     <eathomp@u.washington.edu>
 Maintainer: Charles J. Geyer <charlie@stat.umn.edu>
-Depends: R (>= 3.2.0)
+Depends: R (>= 3.6.0)
 Imports: pooh (>= 0.3)
 Description: Do multi-gene descent probabilities
    (Thompson, 1983, <doi:10.1098/rspb.1983.0072>)

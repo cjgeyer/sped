@@ -55,7 +55,7 @@ in some set $S$ of genes in individuals in the pedigree.
 The individuals $B_1$, $\ldots,$ $B_n$ need not be distinct.
 The set $S$ can be specified by giving for each individual in the pedigree
 an integer 0, 1, or 2 that says how many of its genes (at the autosomal locus
-in question) are in the set $S$.
+in question) are in the set $S$.  (We are assuming a diploid organism.)
 
 Since the order of $B_1$, $\ldots,$ $B_n$ does not matter to the definition,
 we may assume these arguments are in sorted order in some order that always
@@ -285,6 +285,38 @@ and if $B_i$ is a founder
    \phi(B_i, B_i) = 1.
 \end{equation}
 \end{subequations}
+
+\section{A Problem with C Variable-Length Arrays}
+
+The C code underlying the R functions in this package uses C variable-length
+arrays in order to not have to do complicated and tricky cleanup of
+allocated memory in case of user interrupt and also to have memory allocated
+in a recursive function call to be freed as soon as the function returns
+(and the stack is popped).
+
+The problem is that sometimes these C functions use C variable-length
+arrays of zero length.  And the Clang undefined behavior sanitizer used
+by CRAN says that something about this is undefined behavior.
+
+Hence we need to debug this.  We got kicked of CRAN about this issue.
+
+Apparently (stackoverflow post found by googling) zero-length variable-length
+arrays are illegal.  Hence we need to get rid of them.
+
+In Theorem~\ref{th:g} above, cases (1e), (1f), and (1g) all have
+recursive function calls involving $g_S(B_{r+1}, \ldots, B_n)$, which
+means the same as $g_S()$ in case $r = n$.  And the current code
+tries to create a zero-length variable-length array to hold the arguments
+of this function call.
+
+We somehow need to avoid this allocation and hence might as well avoid
+the function call because $g_S() = 1$ always by (1a).
+
+Actually the fix turned out to be easy.  In cases (1e) and (1g) we just
+return the correct value (if $r = n$) before the allocation of the zero-length
+variable-length would happen.  In case (1f) the allocated variable-length
+array has length $n - r + 1 > 0$ to accomodate the other two recursive function
+calls.
 
 \begin{thebibliography}{}
 

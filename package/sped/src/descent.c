@@ -88,7 +88,7 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
 
     int b1 = iargs[0];
     int r = 1;
-    while ((r < nargs) && (iargs[r] == b1)) r = r + 1;
+    while ((r < nargs) && (iargs[r] == b1)) r++;
 
     // case (b), equation (1b)
     if ((ipa[b1 - 1] != 0) && (igenes[b1 - 1] == 0) && (r == 1)) {
@@ -130,6 +130,9 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
     if (igenes[b1 - 1] == 2) {
         int mynargs = nargs - r;
         // use variable-length array so freed automatically on user interrupt
+        // except do not allocate zero-length array, which is illegal
+        if (mynargs == 0)
+            return 1.0;
         int myargs[mynargs];
         memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
         return my_descent(nind, ipa, ima, igenes, mynargs, myargs);
@@ -142,6 +145,7 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
         int mynargs = nargs - r;
         // use variable-length array so freed automatically on user interrupt
         // allocate one extra item for second and third call to my_descent
+        // hence no worry about zero-length array, which is illegal
         int myargs[mynargs + 1];
         memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
         double dfoo = my_descent(nind, ipa, ima, igenes, mynargs, myargs);
@@ -161,6 +165,9 @@ static double my_descent(int nind, int *ipa, int *ima, int *igenes,
         for (int i = 2; i <= r; i++) half_r *= half;
         int mynargs = nargs - r;
         // use variable-length array so freed automatically on user interrupt
+        // except do not allocate zero-length array, which is illegal
+        if (mynargs == 0)
+            return half_r;
         int myargs[mynargs];
         memcpy(myargs, iargs + r, (nargs - r) * sizeof(int));
         double dfoo = my_descent(nind, ipa, ima, igenes, mynargs, myargs);

@@ -29,15 +29,6 @@ which every individual has either two parents or none specified. Those with
 none specified are called \emph{founders}.  Any ancestors of founders
 are assumed to not be individuals in the pedigree, that is, we are assuming
 all unknown individuals are different from all known individuals.
-
-Thompson (1983) defines multigene descent probabilities
-\eqn{g_S(B_1, \ldots, B_n)}{g_S(B_1, ..., B_n)}
-to be the probability that genes at one autosomal locus randomly chosen
-from each of the individuals \eqn{B_1}, \ldots, \eqn{B_n} are all descended
-from genes (not necessarily the same gene) in some set \eqn{S} of genes in
-individuals in the pedigree. The individuals need not be distinct (there
-can be repeats). The individuals are specified by argument \code{individuals}.
-The gene set \eqn{S} is specified by argument \code{geneset}.
 }
 \value{
 A matrix whose rows are probabilities relating to particular founders
@@ -66,7 +57,7 @@ Software for calculating gene survival and multigene descent
     probabilities and for pedigree manipulation and drawing.
 Technical Report No. 153, Department of Statistics,
     University of Washington.
-\url{https://www.stat.washington.edu/article/tech-report/software-calculating-gene-survival-and-multigene-descent-probabilities-and}.
+\url{https://stat.uw.edu/sites/default/files/files/reports/1988/tr153.pdf}.
 
 Thompson, E. A. (1983)
 Gene extinction and allelic origins in complex genealogies (with discussion).

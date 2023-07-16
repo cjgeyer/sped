@@ -2,3 +2,5 @@
         R_alloc blew out available memory on win-builder.r-project.org
 
 0.2-1   Multi-gene in DESCRIPTION file to "Multi-Gene".  Oof!
+
+0.3     Fix length zero variable-length C arrays, which are illegal
